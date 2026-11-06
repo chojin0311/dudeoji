@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b3a2f">
+<title>두더지 잡기 · 참여</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Pen+Script&display=swap">
+<style>
+/* 학생 폰: 칠판 한 장. 위 띠(모둠·방·연결) · 아래 지금 활동 하나 */
+:root {
+  color-scheme: dark;
+  --board: #1b3a2f;
+  --board-2: #22463a;
+  --board-ink: #10261d;
+  --chalk: #eef2eb;
+  --chalk-2: #b6c7bc;
+  --chalk-3: rgba(238, 242, 235, .32);
+  --chalk-4: rgba(238, 242, 235, .08);
+  --yellow: #f3d35b;
+  --yellow-wash: rgba(243, 211, 91, .14);
+  --pink: #f6b3c8;
+  --paper: #f5f6f1;
+  --card: #ffffff;
+  --ink: #17211c;
+  --ink-2: #4d5b53;
+  --seal: #cc2f29;
+  --ok: #8fdca5;
+  --shade: rgba(0, 0, 0, .38);
+  --pit: #0a1712;
+  --mole: #7b5337;
+  --mole-2: #5c3d28;
+  --mole-face: #c49a74;
+  --mole-nose: #ef8fa3;
+  --mole-eye: #140f0b;
+  --mole-tooth: #fbf7ee;
+  --left: #3d84e6;
+  --right: #ff8b3d;
+  --g1: #3d84e6; --g2: #f1b633; --g3: #a274f2; --g4: #f4f4ee; --g5: #f27aa9; --g6: #ff8b3d;
+  --fd: "Black Han Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --fb: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --fc: "Nanum Pen Script", "Apple SD Gothic Neo", "Malgun Gothic", cursive;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font: 400 17px/1.5 var(--fb);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  color: var(--chalk);
+  background: radial-gradient(70% 40% at 20% 0%, var(--chalk-4), transparent 70%), var(--board);
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
+textarea, input { font: inherit; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+h1, h2, p { margin: 0; }
+h1, h2 { font-weight: 400; text-wrap: balance; }
+[hidden] { display: none !important; }
+
+.app {
+  max-width: 34rem;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding-block: calc(.55rem + env(safe-area-inset-top, 0px)) .55rem;
+  background: var(--board);
+  border-bottom: 1px dashed var(--chalk-3);
+}
+.brand { font-family: var(--fd); font-size: 1.05rem; letter-spacing: .02em; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me { display: flex; align-items: center; gap: .45rem; flex: none; }
+.me b { font-weight: 700; }
+.room { color: var(--chalk-2); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--chalk-3); flex: none; }
+.dot.on { background: var(--ok); box-shadow: 0 0 0 3px rgba(143, 220, 165, .2); }
+.change { background: none; border: 1px solid var(--chalk-3); border-radius: .45rem; color: var(--chalk-2); font-size: .78rem; padding: .3rem .5rem; }
+.offline { margin-top: .6rem; padding: .5rem .7rem; border-radius: .5rem; background: var(--yellow-wash); color: var(--yellow); font-size: .88rem; }
+
+.main { padding-top: 1.1rem; display: grid; gap: 1rem; align-content: start; }
+.view { display: grid; gap: 1rem; }
+.eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .1em; color: var(--chalk-2); }
+.q { font-family: var(--fd); font-size: 1.7rem; line-height: 1.22; }
+.h1 { font-family: var(--fd); font-size: 2.2rem; line-height: 1.15; }
+.msg { color: var(--chalk-2); font-size: 1.02rem; }
+.chalk { font-family: var(--fc); font-size: 1.7rem; line-height: 1.15; color: var(--yellow); }
+.help { color: var(--chalk-2); font-size: .9rem; }
+.head { display: grid; gap: .35rem; }
+
+.token { width: 1.9rem; height: 1.9rem; border-radius: 50%; display: inline-grid; place-items: center; flex: none; font-weight: 700; font-size: .92rem; color: var(--board-ink); background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .55), transparent 45%), var(--gc); box-shadow: 0 2px 4px var(--shade), inset 0 -2px 0 rgba(0, 0, 0, .18); }
+.token.lg { width: 3.4rem; height: 3.4rem; font-size: 1.5rem; }
+
+/* 첫 화면 */
+.join { display: grid; gap: 1.2rem; padding-top: .4rem; }
+.join-title { font-family: var(--fd); font-size: 2.6rem; line-height: 1.05; }
+.join-sub { font-family: var(--fc); font-size: 1.8rem; color: var(--yellow); line-height: 1.1; }
+.groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.gbtn { display: grid; justify-items: center; gap: .35rem; padding: .9rem .4rem .8rem; border-radius: .8rem; border: 2px solid var(--chalk-3); background: transparent; font-weight: 700; }
+.gbtn[aria-pressed="true"] { border-color: var(--yellow); background: var(--yellow-wash); }
+.room-form { display: grid; gap: .6rem; }
+.room-in { width: 100%; font-family: var(--fd); font-size: 2.4rem; letter-spacing: .3em; text-align: center; padding: .5rem; border-radius: .7rem; border: 2px solid var(--chalk-3); background: var(--board-ink); color: var(--chalk); }
+.room-in:focus { outline: none; border-color: var(--yellow); }
+.fine { color: var(--chalk-2); font-size: .8rem; }
+
+.btn-main { width: 100%; min-height: 3.4rem; border: 0; border-radius: .7rem; background: var(--yellow); color: var(--board-ink); font-size: 1.15rem; font-weight: 700; box-shadow: 0 3px 0 var(--shade); }
+.btn-main:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shade); }
+.btn-main:disabled { opacity: .55; }
+
+/* 기다림 */
+.wait { display: grid; gap: .9rem; justify-items: start; padding-top: .6rem; }
+.mole-peek { width: 9rem; max-width: 50%; }
+.mole-peek svg { display: block; width: 100%; height: auto; }
+.pit { fill: var(--pit); }
+.rim { fill: none; stroke: var(--chalk-3); stroke-width: 3; stroke-linecap: round; }
+.m-body { fill: var(--mole); } .m-face { fill: var(--mole-face); } .m-eye { fill: var(--mole-eye); }
+.m-shine, .m-tooth { fill: var(--mole-tooth); } .m-nose { fill: var(--mole-nose); } .m-paw { fill: var(--mole-2); }
+.peek { animation: peek 3.6s ease-in-out infinite; }
+@keyframes peek { 0%, 10% { transform: translateY(104px); } 25%, 60% { transform: translateY(0); } 78%, 100% { transform: translateY(104px); } }
+
+/* 고르기 */
+.opts { display: grid; gap: .6rem; }
+.opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opt { position: relative; display: flex; align-items: center; gap: .6rem; min-height: 3.6rem; padding: .7rem .9rem; border-radius: .8rem; border: 2px solid var(--chalk-3); background: var(--chalk-4); text-align: left; font-weight: 700; font-size: 1.05rem; line-height: 1.3; min-width: 0; }
+.opt .n { font-family: var(--fd); font-weight: 400; color: var(--yellow); flex: none; }
+.opt .t { flex: 1 1 auto; min-width: 0; }
+.opt[aria-pressed="true"] { border-color: var(--yellow); background: var(--yellow-wash); }
+.opt.wide { grid-column: 1 / -1; border-style: dashed; }
+.opt:disabled { opacity: 1; }
+.opt.right { border-color: var(--ok); }
+.opt.dim { opacity: .5; }
+.opt .token { margin-left: auto; }
+.result { display: grid; gap: .3rem; padding: .9rem 1rem; border-radius: .8rem; background: var(--paper); color: var(--ink); }
+.result-k { font-size: .78rem; font-weight: 700; letter-spacing: .1em; color: var(--ink-2); }
+.result-t { font-family: var(--fd); font-size: 1.5rem; line-height: 1.2; }
+.result-s { font-size: .95rem; color: var(--ink-2); }
+.pt { display: inline-block; background: var(--yellow); color: var(--board-ink); border-radius: 999px; padding: .05rem .6rem; font-size: .9rem; font-weight: 700; margin-left: .3rem; }
+.lockline { display: flex; align-items: center; gap: .5rem; font-weight: 700; color: var(--yellow); }
+.now-card { border: 1.5px dashed var(--chalk-3); border-radius: .7rem; padding: .6rem .8rem; font-size: .92rem; color: var(--chalk-2); }
+.now-card b { color: var(--chalk); }
+
+/* 밸런스 */
+.vs { display: grid; gap: .6rem; }
+.side { min-height: 7.4rem; padding: 1rem 1.1rem; border-radius: .9rem; border: 2.5px solid var(--chalk-3); background: transparent; text-align: left; display: grid; gap: .35rem; align-content: center; }
+.side-k { font-size: .78rem; font-weight: 700; letter-spacing: .1em; color: var(--chalk-2); }
+.side-t { font-family: var(--fd); font-size: 1.55rem; line-height: 1.2; }
+.side.left { border-color: var(--left); }
+.side.right { border-color: var(--right); }
+.side[aria-pressed="true"].left { background: rgba(61, 132, 230, .28); }
+.side[aria-pressed="true"].right { background: rgba(255, 139, 61, .26); }
+.side .mine { color: var(--chalk); }
+.vs-mark { justify-self: center; font-family: var(--fd); color: var(--yellow); font-size: 1.3rem; line-height: 1; }
+
+/* 쓰기 */
+.note { display: grid; gap: .3rem; padding: .8rem .9rem .6rem; border-radius: .3rem; color: var(--ink); box-shadow: 0 12px 20px -12px var(--shade); }
+.note.yellow { background: var(--yellow); }
+.note.pink { background: var(--pink); }
+.note.white { background: var(--paper); border-radius: .7rem; }
+.note-k { font-size: .78rem; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); }
+.ta { display: block; width: 100%; min-height: 4.6rem; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--ink); font: 500 1.15rem/1.5 var(--fb); padding: 0; }
+.note.white .ta { background: var(--card); border: 2px solid var(--yellow); border-radius: .5rem; padding: .45rem .6rem; }
+.ta:focus { outline: none; }
+.note:focus-within { outline: 3px solid var(--chalk); outline-offset: 3px; }
+.ta::placeholder { color: var(--ink-2); opacity: .6; }
+.count { justify-self: end; font-size: .78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.status { font-size: .9rem; color: var(--chalk-2); min-height: 1.4em; }
+.status b { color: var(--ok); font-weight: 700; }
+.status .wait-s { color: var(--yellow); }
+.ex { font-size: .92rem; color: var(--chalk-2); }
+.ex b { color: var(--chalk); margin-right: .3rem; }
+.theirs { display: grid; gap: .25rem; padding: .8rem .9rem; border-radius: .7rem; background: var(--paper); color: var(--ink); }
+.theirs-k { display: flex; align-items: center; gap: .45rem; font-size: .8rem; font-weight: 700; color: var(--ink-2); }
+.theirs-t { font-size: 1.1rem; font-weight: 600; line-height: 1.45; white-space: pre-wrap; }
+.theirs-t.empty { color: var(--ink-2); font-weight: 400; opacity: .7; }
+.theirs + .theirs { margin-top: -.4rem; }
+
+/* 투표 */
+.vote-sec { display: grid; gap: .5rem; padding-top: .4rem; border-top: 1px dashed var(--chalk-3); }
+.vote-h { font-family: var(--fd); font-size: 1.25rem; }
+.votes { display: grid; gap: .45rem; }
+.vote { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .6rem; align-items: start; padding: .65rem .8rem; border-radius: .7rem; border: 2px solid var(--chalk-3); background: var(--chalk-4); text-align: left; font-size: .95rem; line-height: 1.45; }
+.vote[aria-pressed="true"] { border-color: var(--yellow); background: var(--yellow-wash); }
+.vote .vk { display: block; font-size: .78rem; font-weight: 700; color: var(--chalk-2); }
+.vote .vt.empty { color: var(--chalk-2); }
+.vote-no { font-size: .85rem; color: var(--chalk-2); }
+
+/* 끝 */
+.end { display: grid; gap: .9rem; padding-top: .6rem; }
+.end-score { display: flex; align-items: center; gap: .8rem; padding: 1rem; border-radius: .9rem; border: 2px solid var(--yellow); background: var(--yellow-wash); }
+.end-score b { font-family: var(--fd); font-weight: 400; font-size: 2.6rem; line-height: 1; }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100% - 32px); padding: .65rem 1rem; border-radius: .7rem; background: var(--paper); color: var(--ink); font-weight: 600; font-size: .95rem; box-shadow: 0 10px 24px -10px var(--shade); }
+.err { display: grid; gap: .7rem; padding-top: 1rem; }
+@media (prefers-reduced-motion: reduce) { .peek { animation: none; transform: none; } }
+@media (min-width: 30rem) { .groups { grid-template-columns: repeat(6, minmax(0, 1fr)); } .vs { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; } .vs-mark { align-self: center; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top" id="top"><p class="brand">60년, 두더지 잡기</p></header>
+  <main class="main" id="main" aria-live="polite"><p class="msg">불러오는 중…</p></main>
+</div>
+<p class="toast" id="toast" role="status" hidden></p>
+
+<script>
+(() => {
+  'use strict';
+  const NUMS = ['①', '②', '③', '④', '⑤', '⑥'];
+  const LS_KEY = 'dudeoji-student-v1';
+  const LIM = { policy: 60, counter: 80, reply: 60 };
+  const $ = (id) => document.getElementById(id);
+  const main = $('main'), top = $('top'), toastEl = $('toast');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Realtime Database는 숫자 키를 배열로 돌려줄 때가 있다: 객체와 배열을 똑같이 다룬다
+  const at = (x, k) => (x && typeof x === 'object' && x[k] != null ? x[k] : null);
+  const isG = (g) => /^[1-6]$/.test(String(g));
+
+  const S = {
+    status: 'boot', err: '', room: '', g: null, cid: '', suggest: '', picking: false,
+    groups: 6, act: null, actKey: '', liveSeen: false, connected: false, everConnected: false,
+    data: { cards: null, quiz: null, bets: null }, mine: {}, localBal: {}, drafts: {}, sending: {}, presKey: '', epoch: 0,
+  };
+  let db = null, roomRef = null, subs = [], noRoomT = 0;
+
+  const groupsList = () => Array.from({ length: S.groups }, (_, i) => String(i + 1));
+  const nextG = (g) => String((Number(g) % S.groups) + 1);
+  const prevG = (g) => String(((Number(g) + S.groups - 2) % S.groups) + 1);
+  const token = (g, cls) => `<span class="token${cls ? ' ' + cls : ''}" style="--gc: var(--g${g})" aria-hidden="true">${g}</span>`;
+
+  function loadLS() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function saveLS() { try { localStorage.setItem(LS_KEY, JSON.stringify({ cid: S.cid, room: S.room, g: S.g })); } catch (e) { /* 저장 안 되는 브라우저 */ } }
+  function newCid() {
+    const a = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let s = '';
+    try { crypto.getRandomValues(new Uint8Array(12)).forEach((b) => { s += a[b % 36]; }); } catch (e) { for (let i = 0; i < 12; i++) s += a[Math.floor(Math.random() * 36)]; }
+    return s;
+  }
+
+  let toastT = 0;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout(toastT);
+    toastT = setTimeout(() => { toastEl.hidden = true; }, 2600);
+  }
+
+  /* ── 연결 ─────────────────────────────── */
+  function boot() {
+    const saved = loadLS();
+    S.cid = /^[a-z0-9]{6,24}$/.test(saved.cid || '') ? saved.cid : newCid();
+    const h = (location.hash || '').replace(/^#/, '');
+    if (/^[0-9]{4}$/.test(h)) {
+      S.room = h;
+      S.g = saved.room === h && isG(saved.g) ? String(saved.g) : null;
+    } else if (/^[0-9]{4}$/.test(saved.room || '')) S.suggest = saved.room;
+    saveLS();
+    const url = typeof window.DUDEOJI_DB === 'string' ? window.DUDEOJI_DB.trim().replace(/\/+$/, '') : '';
+    if (!window.firebase) { S.status = 'nosdk'; render(); return; }
+    if (!url) { S.status = 'noconfig'; render(); return; }
+    try {
+      firebase.initializeApp({ databaseURL: url });
+      db = firebase.database();
+    } catch (e) { S.status = 'error'; S.err = String((e && e.message) || e); render(); return; }
+    db.ref('.info/connected').on('value', (s) => {
+      S.connected = s.val() === true;
+      if (S.connected) { S.everConnected = true; S.epoch += 1; presence(); }
+      drawTop();
+    });
+    if (S.room) joinRoom(S.room);
+    else { S.status = 'needroom'; render(); }
+  }
+
+  function sub(p, fn) {
+    const ref = roomRef.child(p);
+    const cb = ref.on('value', (s) => fn(s.val()), (err) => { S.status = 'error'; S.err = String((err && err.message) || err); render(); });
+    subs.push([ref, cb]);
+  }
+  function joinRoom(room) {
+    subs.forEach(([ref, cb]) => ref.off('value', cb));
+    subs = [];
+    S.room = room; S.act = null; S.actKey = ''; S.liveSeen = false; S.mine = {}; S.presKey = '';
+    S.data = { cards: null, quiz: null, bets: null };
+    roomRef = db.ref('rooms/' + room);
+    S.status = 'joining';
+    saveLS();
+    render();
+    sub('live', onLive);
+    sub('cards', (v) => { S.data.cards = v; changed(); });
+    sub('quiz', (v) => { S.data.quiz = v; changed(); });
+    sub('bets', (v) => { S.data.bets = v; changed(); });
+    sub(`tally/${S.cid}`, (v) => { S.mine.tally = v; changed(); });
+    ['counter', 'reply'].forEach((k) => sub(`votes/${k}/${S.cid}`, (v) => { S.mine['vote-' + k] = v; changed(); }));
+    clearTimeout(noRoomT);
+    noRoomT = setTimeout(() => { if (!S.liveSeen) { S.status = 'noroom'; render(); } }, 8000);
+  }
+  function onLive(v) {
+    let p = null;
+    if (typeof v === 'string') { try { p = JSON.parse(v); } catch (e) { p = null; } }
+    if (p && /^[0-9]{4}$/.test(String(p.moved || '')) && String(p.moved) !== S.room) {
+      try { history.replaceState(null, '', '#' + p.moved); } catch (e) { /* */ }
+      joinRoom(String(p.moved));
+      return;
+    }
+    if (!p || !p.act) return;
+    S.liveSeen = true;
+    clearTimeout(noRoomT);
+    S.groups = [4, 5, 6].includes(p.groups) ? p.groups : 6;
+    if (S.g && Number(S.g) > S.groups) S.g = null;
+    S.act = p.act;
+    S.status = 'live';
+    presence();
+    const key = JSON.stringify(p.act) + '|' + S.g + '|' + S.groups;
+    if (key !== S.actKey) { S.actKey = key; toastEl.hidden = true; clearTimeout(toastT); render(); } else changed();
+  }
+  function presence() {
+    if (!roomRef || !S.connected || !S.g) return;
+    const key = `${S.room}:${S.g}:${S.epoch}`;
+    if (key === S.presKey) return;
+    S.presKey = key;
+    const ref = roomRef.child('presence/' + S.cid);
+    ref.onDisconnect().remove();
+    ref.set(Number(S.g)).catch(() => {});
+  }
+  function write(p, v, okMsg) {
+    if (!roomRef) return Promise.resolve();
+    if (!S.connected) toast('연결이 잠깐 끊겼어요. 다시 연결되면 바로 올라갑니다.');
+    return roomRef.child(p).set(v).then(() => { if (okMsg) toast(okMsg); }).catch((e) => {
+      const denied = /permission/i.test(String((e && (e.code || e.message)) || e));
+      toast(denied ? '보내지 못했어요. 선생님께 알려 주세요.' : '보내지 못했어요. 다시 눌러 주세요.');
+      throw e;
+    });
+  }
+
+  /* ── 그리기 ─────────────────────────────── */
+  // 바뀐 데이터는 바뀐 칸만 고친다. 손가락이 화면에 닿아 있는 동안은 기다렸다가 고친다(누른 버튼이 사라지지 않게)
+  let ptrDown = false, pendingPatch = false;
+  document.addEventListener('pointerdown', () => { ptrDown = true; }, true);
+  const release = () => {
+    ptrDown = false;
+    if (pendingPatch) setTimeout(() => { if (!ptrDown && pendingPatch) { pendingPatch = false; patch(); } }, 90);
+  };
+  document.addEventListener('pointerup', release, true);
+  document.addEventListener('pointercancel', release, true);
+  function changed() { if (ptrDown) { pendingPatch = true; return; } patch(); }
+
+  function drawTop() {
+    const status = S.connected ? '연결됨' : (S.everConnected ? '다시 연결 중' : '연결 중');
+    const me = S.g && S.room
+      ? `<div class="me">${token(S.g)}<b>${S.g}모둠</b><span class="room">방 ${esc(S.room)}</span><span class="dot${S.connected ? ' on' : ''}" role="img" aria-label="${status}"></span><button type="button" class="change" data-action="regroup">바꾸기</button></div>`
+      : (S.room ? `<div class="me"><span class="room">방 ${esc(S.room)}</span><span class="dot${S.connected ? ' on' : ''}" role="img" aria-label="${status}"></span></div>` : '');
+    top.innerHTML = `<p class="brand">60년, 두더지 잡기</p>${me}`;
+  }
+
+  const MOLE = `<svg viewBox="0 0 200 140" aria-hidden="true" focusable="false"><defs><clipPath id="pc"><path d="M0 0H200V104H182A82 24 0 0 1 18 104H0Z"/></clipPath></defs>
+    <ellipse class="pit" cx="100" cy="104" rx="82" ry="24"/><g clip-path="url(#pc)"><g class="peek">
+    <path class="m-body" d="M58 132V84a42 42 0 0 1 84 0v48z"/><ellipse class="m-face" cx="100" cy="96" rx="26" ry="18"/>
+    <circle class="m-eye" cx="85" cy="74" r="5"/><circle class="m-eye" cx="115" cy="74" r="5"/><circle class="m-shine" cx="86.8" cy="72.2" r="1.7"/><circle class="m-shine" cx="116.8" cy="72.2" r="1.7"/>
+    <ellipse class="m-nose" cx="100" cy="88" rx="9" ry="6.5"/><rect class="m-tooth" x="95" y="99" width="4.6" height="7" rx="1.2"/><rect class="m-tooth" x="100.4" y="99" width="4.6" height="7" rx="1.2"/>
+    <ellipse class="m-paw" cx="70" cy="118" rx="12" ry="7.5"/><ellipse class="m-paw" cx="130" cy="118" rx="12" ry="7.5"/></g></g>
+    <path class="rim" d="M18 104A82 24 0 0 0 182 104"/></svg>`;
+
+  // 다시 그려도 되는 조각: 쓰는 중에도 이 칸만 새로 채운다
+  const REGIONS = {};
+  function region(name, fn) { REGIONS[name] = fn; return `<div data-region="${name}">${fn()}</div>`; }
+  function patch() {
+    drawTop();
+    main.querySelectorAll('[data-region]').forEach((el) => {
+      const fn = REGIONS[el.dataset.region];
+      if (!fn) return;
+      const html = fn();
+      if (el.__html !== html) { el.innerHTML = html; el.__html = html; }
+    });
+  }
+
+  function render() {
+    drawTop();
+    Object.keys(REGIONS).forEach((k) => delete REGIONS[k]);
+    const a = document.activeElement;
+    const keep = a && a.tagName === 'TEXTAREA' ? { id: a.id, s: a.selectionStart, e: a.selectionEnd } : null;
+    main.innerHTML = view();
+    main.querySelectorAll('textarea').forEach(autosize);
+    if (keep) { const el = $(keep.id); if (el) { el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch (e) { /* */ } } }
+  }
+
+  function view() {
+    switch (S.status) {
+      case 'boot': case 'joining': return `<section class="wait"><div class="mole-peek">${MOLE}</div><p class="msg">선생님 화면과 연결하는 중…</p></section>`;
+      case 'nosdk': return `<section class="err"><h1 class="q">연결 도구를 불러오지 못했어요</h1><p class="msg">인터넷 연결을 확인하고 새로고침해 주세요.</p></section>`;
+      case 'noconfig': return `<section class="err"><h1 class="q">아직 연결 설정이 비어 있어요</h1><p class="msg">선생님께 알려 주세요. (config.js의 데이터베이스 주소)</p></section>`;
+      case 'error': return `<section class="err"><h1 class="q">연결에 문제가 생겼어요</h1><p class="msg">새로고침해 보고, 계속되면 선생님께 알려 주세요.</p><p class="fine">${esc(S.err)}</p></section>`;
+      case 'needroom': case 'noroom': return roomView();
+      default: return !S.g || S.picking ? groupView() : actView();
+    }
+  }
+  function roomView() {
+    const bad = S.status === 'noroom';
+    return `<section class="join">
+      <div class="head"><h1 class="join-title">방 번호</h1><p class="join-sub">선생님 화면에 보이는 네 자리 숫자</p></div>
+      ${bad ? `<p class="offline">방 ${esc(S.room)}을(를) 찾지 못했어요. 번호를 다시 확인해 주세요.</p>` : ''}
+      <form class="room-form" id="roomForm" novalidate>
+        <input class="room-in" id="roomIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="방 번호 네 자리" value="${esc(bad ? '' : S.suggest)}">
+        <button type="submit" class="btn-main">들어가기</button>
+      </form>
+    </section>`;
+  }
+  function groupView() {
+    return `<section class="join">
+      <div class="head"><p class="eyebrow">방 ${esc(S.room)}</p><h1 class="join-title">우리 모둠은?</h1><p class="join-sub">자기 모둠 번호를 누르세요</p></div>
+      <div class="groups">${groupsList().map((g) => `<button type="button" class="gbtn" data-group="${g}" aria-pressed="${S.g === g}">${token(g, 'lg')}<span>${g}모둠</span></button>`).join('')}</div>
+      <p class="fine">이름은 받지 않아요. 모둠 번호만 화면에 보입니다.</p>
+    </section>`;
+  }
+
+  function actView() {
+    const a = S.act || { k: 'wait' };
+    if (a.k === 'pick') return pickView(a);
+    if (a.k === 'bal') return balView(a);
+    if (a.k === 'board') return boardView(a);
+    if (a.k === 'tally') return tallyView(a);
+    if (a.k === 'end') return endView(a);
+    return `<section class="wait"><p class="eyebrow">지금은</p><h1 class="h1">${esc(a.title || '화면을 보세요')}</h1><p class="msg">${esc(a.msg || '')}</p><div class="mole-peek">${MOLE}</div></section>`;
+  }
+
+  /* 쓰는 칸: 초안은 S.drafts에 두고, 보낸 내용은 데이터베이스에서 읽는다 */
+  function serverText(key) {
+    const [kind, x, f] = key.split(':');
+    if (kind === 'card') { const c = at(S.data.cards, x); const t = c && c[f]; return typeof t === 'string' ? t : ''; }
+    return '';
+  }
+  function draftOf(key) { return S.drafts[key] != null ? S.drafts[key] : serverText(key); }
+  function statusLine(key, onScreen) {
+    const sv = serverText(key), d = S.drafts[key];
+    if (S.sending[key]) return '<span class="wait-s">보내는 중…</span>';
+    if (d != null && d.trim() && d.trim() !== sv.trim()) return '<span class="wait-s">아직 보내지 않았어요</span>';
+    if (sv) return `<b>✓ ${onScreen}</b>`;
+    return '';
+  }
+  function field(key, o) {
+    const id = 'ta-' + key.replace(/:/g, '-');
+    const v = draftOf(key);
+    return `<div class="note ${o.color || 'white'}">
+        <label class="note-k" for="${id}">${o.label}</label>
+        <textarea class="ta" id="${id}" data-key="${key}" maxlength="${o.max}" rows="2" placeholder="${o.ph || '한 줄로 적어 보세요'}">${esc(v)}</textarea>
+        <span class="count" data-count="${key}">${v.length} / ${o.max}</span>
+      </div>
+      <button type="button" class="btn-main" data-send="${key}" data-max="${o.max}">${o.btn || '보내기'}</button>
+      ${region('st-' + key, () => `<p class="status">${statusLine(key, o.done || '화면에 올라갔어요. 고쳐서 다시 보내도 됩니다.')}</p>`)}`;
+  }
+
+  function pickView(a) {
+    const opts = Array.isArray(a.opts) ? a.opts : [];
+    const isBet = a.id === 'bet';
+    const pick = () => {
+      if (a.lock && a.picks && a.picks[S.g] != null) return Number(a.picks[S.g]);
+      const src = isBet ? S.data.bets : at(S.data.quiz, String(a.path || '').split('/')[1]);
+      const v = at(src, S.g);
+      return Number.isInteger(v) ? v : null;
+    };
+    const optsHtml = () => {
+      const p = pick();
+      return `<div class="opts${isBet ? ' two' : ''}">${opts.map((o, i) => {
+        const last = isBet && i === opts.length - 1;
+        let cls = last ? ' wide' : '';
+        if (a.lock && a.answer != null) cls += i === a.answer ? ' right' : (i === p ? '' : ' dim');
+        return `<button type="button" class="opt${cls}" data-pick="${i}" aria-pressed="${p === i}"${a.lock ? ' disabled' : ''}>
+          ${last ? '' : `<span class="n">${NUMS[i]}</span>`}<span class="t">${esc(o)}</span>${p === i ? token(S.g) : ''}</button>`;
+      }).join('')}</div>`;
+    };
+    const resultHtml = () => {
+      const p = pick();
+      if (!a.lock) return `<p class="help">모둠원 누구나 눌러 바꿀 수 있어요. 모둠이 함께 하나로 정하세요.${isBet ? ' 근거 하나를 말할 수 있어야 합니다.' : ''}</p>`;
+      let html = '<p class="lockline">마감</p>';
+      if (a.answer != null) {
+        const hit = p === a.answer;
+        html += `<div class="result"><p class="result-k">정답</p><p class="result-t">${NUMS[a.answer]} ${esc(opts[a.answer])}</p><p class="result-s">${p == null ? '우리 모둠은 고르지 않았어요.' : hit ? `우리 모둠 정답!<span class="pt">+${a.pts}점</span>` : `우리 모둠은 ${NUMS[p]} ${esc(opts[p])}`}</p></div>`;
+      } else if (isBet) {
+        const st = Array.isArray(a.mole) ? a.mole : [];
+        const out = opts.length - 1;
+        let s = '화면의 뉴스 카드를 보세요.';
+        if (p == null) s = '우리 모둠은 걸지 않았어요.';
+        else if (p === out) s = '‘안 나온다’에 걸었어요. 근거가 좋으면 보너스를 받을 수 있어요.';
+        else if (st[p] === 'pop') s = `우리가 건 구멍에서 두더지가 나왔어요!<span class="pt">+${a.pts}점</span>`;
+        else if (st[p] === 'doubt') s = '물음표 두더지예요. 근거가 좋으면 보너스를 받을 수 있어요.';
+        else if (a.done) s = '이 구멍에서는 두더지가 나오지 않았어요.';
+        html += `<div class="result"><p class="result-k">우리 모둠 자석</p><p class="result-t">${p == null ? '—' : esc(opts[p])}</p><p class="result-s">${s}</p></div>`;
+        if (a.card) html += `<p class="now-card">지금 화면 · <b>${esc(a.card.kicker)}</b> ${esc(a.card.head)}</p>`;
+      }
+      return html;
+    };
+    return `<section class="view">
+      <div class="head"><p class="eyebrow">${esc(a.eyebrow || '')} · 모둠이 함께 하나</p><h1 class="q">${esc(a.title || '')}</h1></div>
+      ${region('opts', optsHtml)}
+      ${region('result', resultHtml)}
+    </section>`;
+  }
+
+  function balView(a) {
+    const mine = () => { const v = S.localBal[a.i]; return v === 0 || v === 1 ? v : null; };
+    return `<section class="view">
+      <div class="head"><p class="eyebrow">② 밸런스 게임 · ${Number(a.i) + 1} / ${a.n || 3}</p><h1 class="q">둘 중 하나를 고르세요</h1></div>
+      ${region('bal', () => `<div class="vs">
+        <button type="button" class="side left" data-bal="0" aria-pressed="${mine() === 0}"><span class="side-k">왼쪽${mine() === 0 ? ' · <span class="mine">내 선택</span>' : ''}</span><span class="side-t">${esc(a.a)}</span></button>
+        <span class="vs-mark" aria-hidden="true">VS</span>
+        <button type="button" class="side right" data-bal="1" aria-pressed="${mine() === 1}"><span class="side-k">오른쪽${mine() === 1 ? ' · <span class="mine">내 선택</span>' : ''}</span><span class="side-t">${esc(a.b)}</span></button>
+      </div>`)}
+      <p class="chalk">왜 그쪽을 골랐나요?</p>
+      <p class="help">인원은 세지 않아요. 고른 다음, 왜 그쪽인지 말할 준비를 하세요.</p>
+    </section>`;
+  }
+
+  function tallyView(a) {
+    const opts = Array.isArray(a.opts) ? a.opts : ['사라진다', '그래도 남는다'];
+    const mine = () => { const v = S.mine.tally; return v === 0 || v === 1 ? v : null; };
+    return `<section class="view">
+      <div class="head"><p class="eyebrow">⑤ 다시 묻기 · 점수 없음</p><h1 class="q">${esc(a.q || '')}</h1></div>
+      ${region('tally', () => `<div class="vs">
+        <button type="button" class="side left" data-tally="0" aria-pressed="${mine() === 0}">${mine() === 0 ? '<span class="side-k mine">내 선택</span>' : ''}<span class="side-t">${esc(opts[0])}</span></button>
+        <span class="vs-mark" aria-hidden="true">VS</span>
+        <button type="button" class="side right" data-tally="1" aria-pressed="${mine() === 1}">${mine() === 1 ? '<span class="side-k mine">내 선택</span>' : ''}<span class="side-t">${esc(opts[1])}</span></button>
+      </div>`)}
+      <p class="help">고른 다음, 이유를 한 줄로 말할 준비를 하세요.</p>
+    </section>`;
+  }
+
+  function cardText(h, f) { const c = at(S.data.cards, h); const t = c && c[f]; return typeof t === 'string' ? t.trim() : ''; }
+  function theirs(label, h, f, emptyMsg) {
+    const t = cardText(h, f);
+    return `<div class="theirs"><p class="theirs-k">${token(h)}${label}</p><p class="theirs-t${t ? '' : ' empty'}">${t ? esc(t) : emptyMsg}</p></div>`;
+  }
+  function boardView(a) {
+    const g = S.g, step = Number(a.step) || 0;
+    const lim = a.limits || LIM;
+    if (step === 0) {
+      return `<section class="view">
+        <div class="head"><p class="eyebrow">④ 정책과 반박 · 1/3 우리 정책</p><h1 class="q">두더지가 나온 구멍 하나를 막을 정책을 한 줄로</h1></div>
+        ${a.ex ? `<p class="ex"><b>예시</b>${esc(a.ex)}</p>` : ''}
+        ${field(`card:${g}:policy`, { label: `우리 정책 · ${g}모둠`, max: lim.policy || 60, btn: '우리 칸에 올리기', ph: '여기에 적기', done: '우리 칸에 올라갔어요.' })}
+        <p class="help">모둠에서 한 사람이 적어 올리면 됩니다. 다시 올리면 바뀝니다.</p>
+      </section>`;
+    }
+    if (step === 1) {
+      const h = prevG(g);
+      return `<section class="view">
+        <div class="head"><p class="eyebrow">④ 정책과 반박 · 2/3 옆 모둠 반박</p><h1 class="q">${h}모둠 정책을 쓰면, 두더지는 어디로 갈까?</h1></div>
+        ${region('their', () => theirs(`${h}모둠 정책`, h, 'policy', '아직 정책을 올리지 않았어요.'))}
+        ${a.hint ? `<p class="chalk">${esc(a.hint)}</p>` : ''}
+        ${field(`card:${h}:counter`, { label: `반박 · ${h}모둠 칸에`, max: lim.counter || 80, btn: `${h}모둠 칸에 올리기`, ph: '경쟁이 어디로 옮겨 갈까?', done: `${h}모둠 칸에 올라갔어요.` })}
+        ${a.ex ? `<p class="ex"><b>예시</b>${esc(a.ex)}</p>` : ''}
+      </section>`;
+    }
+    const counterBox = prevG(g);
+    const votes = (kind) => {
+      const mineV = S.mine['vote-' + kind];
+      const chosen = mineV && isG(mineV.v) ? String(mineV.v) : null;
+      const list = groupsList().filter((h) => (kind === 'counter' ? h !== counterBox : h !== g));
+      return `<div class="votes">${list.map((h) => {
+        const t = kind === 'counter' ? cardText(h, 'counter') : cardText(h, 'reply');
+        const k = kind === 'counter' ? `${h}모둠 칸 · ${nextG(h)}모둠의 반박` : `${h}모둠의 답변`;
+        return `<button type="button" class="vote" data-vote="${kind}:${h}" aria-pressed="${chosen === h}">${token(h)}<span><span class="vk">${k}</span><span class="vt${t ? '' : ' empty'}">${t ? esc(t) : '아직 비어 있어요'}</span></span></button>`;
+      }).join('')}</div>`;
+    };
+    return `<section class="view">
+      <div class="head"><p class="eyebrow">④ 정책과 반박 · 3/3 발표와 투표</p><h1 class="q">반박에 답하고, 투표하세요</h1></div>
+      ${region('ours', () => theirs(`우리 정책 · ${g}모둠`, g, 'policy', '우리 정책이 비어 있어요.') + theirs(`${nextG(g)}모둠의 반박`, g, 'counter', '아직 반박이 없어요.'))}
+      ${field(`card:${g}:reply`, { label: `우리 답변 · ${g}모둠`, max: lim.reply || 60, btn: '답변 올리기', ph: '말로 답해도 됩니다', done: '답변이 올라갔어요.' })}
+      <div class="vote-sec"><h2 class="vote-h">가장 날카로운 반박</h2><p class="vote-no">우리 모둠이 쓴 반박(${counterBox}모둠 칸)은 빠져 있어요.</p>${region('v-counter', () => votes('counter'))}</div>
+      <div class="vote-sec"><h2 class="vote-h">가장 설득력 있는 답변</h2><p class="vote-no">우리 모둠 답변은 빠져 있어요.</p>${region('v-reply', () => votes('reply'))}</div>
+    </section>`;
+  }
+
+  function endView(a) {
+    const totals = a.totals || {}, mine = Number(totals[S.g]) || 0;
+    const winners = Array.isArray(a.winners) ? a.winners.map(String) : [];
+    const order = Object.keys(totals).sort((x, y) => totals[y] - totals[x]);
+    const rank = order.filter((g) => totals[g] > mine).length + 1;
+    const title = winners.length ? `${winners.map((g) => g + '모둠').join(', ')} ${winners.length > 1 ? '공동 우승' : '우승'}!` : '수고했어요';
+    return `<section class="end">
+      <p class="eyebrow">${a.teaser ? '다음 화 예고' : '최종 점수'}</p>
+      <h1 class="h1">${esc(title)}</h1>
+      <div class="end-score">${token(S.g, 'lg')}<span>우리 모둠 <b>${mine}</b>점 · ${rank}등${winners.includes(S.g) ? ' · 우승' : ''}</span></div>
+      <p class="msg">${a.teaser ? '다음 시간 · 우리는 왜 ‘좋은 대학’에 가려 할까?' : '게임 점수는 수업 평가에 넣지 않습니다. 수고했어요!'}</p>
+    </section>`;
+  }
+
+  function autosize(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight + 2) + 'px'; }
+
+  /* ── 조작 ─────────────────────────────── */
+  main.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.tagName !== 'TEXTAREA' || !t.dataset.key) return;
+    S.drafts[t.dataset.key] = t.value;
+    autosize(t);
+    const c = main.querySelector(`[data-count="${t.dataset.key}"]`);
+    if (c) c.textContent = `${t.value.length} / ${t.maxLength}`;
+    const st = main.querySelector(`[data-region="st-${t.dataset.key}"]`);
+    if (st && REGIONS['st-' + t.dataset.key]) st.innerHTML = REGIONS['st-' + t.dataset.key]();
+  });
+  main.addEventListener('submit', (e) => {
+    if (e.target.id !== 'roomForm') return;
+    e.preventDefault();
+    const v = ($('roomIn').value || '').replace(/\D/g, '').slice(0, 4);
+    if (v.length !== 4) { toast('네 자리 숫자를 넣어 주세요.'); return; }
+    try { history.replaceState(null, '', '#' + v); } catch (err) { /* */ }
+    S.g = null;
+    joinRoom(v);
+  });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const d = b.dataset;
+    if (d.action === 'regroup') { S.picking = true; render(); return; }
+    if (d.group) {
+      S.g = d.group; S.picking = false; saveLS(); S.presKey = '';
+      presence(); render();
+      return;
+    }
+    const a = S.act;
+    if (!a || S.status !== 'live' || !S.g || S.picking) return;
+    if (d.pick != null && a.k === 'pick' && !a.lock) {
+      write(`${a.path}/${S.g}`, Number(d.pick)).catch(() => {});
+    } else if (d.bal != null && a.k === 'bal') {
+      S.localBal[Number(a.i)] = Number(d.bal);
+      patch();
+    } else if (d.tally != null && a.k === 'tally') {
+      write(`tally/${S.cid}`, Number(d.tally)).catch(() => {});
+    } else if (d.vote && a.k === 'board') {
+      const [kind, h] = d.vote.split(':');
+      write(`votes/${kind}/${S.cid}`, { g: Number(S.g), v: Number(h) }, `${h}모둠 칸에 투표했어요`).catch(() => {});
+    } else if (d.send) {
+      const key = d.send, max = Number(d.max) || 80;
+      const text = draftOf(key).replace(/\s+/g, ' ').trim().slice(0, max);
+      if (!text) { toast('먼저 적어 주세요.'); return; }
+      const [kind, x, f] = key.split(':');
+      if (kind !== 'card') return;
+      const path = `cards/${x}/${f}`, value = text;
+      S.sending[key] = true; S.drafts[key] = text; patch();
+      write(path, value, '화면에 올라갔어요').then(() => { S.sending[key] = false; delete S.drafts[key]; patch(); }, () => { S.sending[key] = false; patch(); });
+    }
+  });
+  window.addEventListener('hashchange', () => {
+    const h = (location.hash || '').replace(/^#/, '');
+    if (/^[0-9]{4}$/.test(h) && h !== S.room && db) { S.g = null; joinRoom(h); }
+  });
+  window.addEventListener('load', boot);
+})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+</body>
+</html>

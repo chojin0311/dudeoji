@@ -1,0 +1,2096 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>60년, 두더지 잡기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&display=swap">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="config.js"></script>
+</head>
+<body>
+<style>
+/* 칠판 무대: 위 진행 띠 · 가운데 장면과 오른쪽 점수판 · 아래 조작 띠. 1~3단계는 두더지 판, 4단계는 가상 뉴스 화면, 5단계는 두 칸 분류판 */
+:root {
+  color-scheme: dark;
+  --board: #1b3a2f;
+  --board-2: #22463a;
+  --board-ink: #10261d;
+  --chalk: #eef2eb;
+  --chalk-2: #b6c7bc;
+  --chalk-3: rgba(238, 242, 235, .32);
+  --chalk-4: rgba(238, 242, 235, .07);
+  --yellow: #f3d35b;
+  --yellow-wash: rgba(243, 211, 91, .12);
+  --pink: #f6b3c8;
+  --paper: #f5f6f1;
+  --paper-2: #e8ece3;
+  --card: #ffffff;
+  --rule: #d3d9cf;
+  --ink: #17211c;
+  --ink-2: #4d5b53;
+  --seal: #cc2f29;
+  --seal-hi: #ff6a5e;
+  --seal-lo: #8e1c18;
+  --shade: rgba(0, 0, 0, .4);
+  --pit: #0a1712;
+  --pit-2: #040a07;
+  --rim: rgba(238, 242, 235, .5);
+  --mole: #7b5337;
+  --mole-2: #5c3d28;
+  --mole-face: #c49a74;
+  --mole-doubt: #6c6660;
+  --mole-doubt-face: #9b948c;
+  --mole-nose: #ef8fa3;
+  --mole-eye: #140f0b;
+  --mole-tooth: #fbf7ee;
+  --tv-bg: #0c1530;
+  --tv-bg-2: #1d2d5c;
+  --tv-fg: #ffffff;
+  --tv-dim: #b9c3df;
+  --tv-red: #e0261d;
+  --tv-band: rgba(6, 10, 26, .9);
+  --tv-gold: #ffd24a;
+  --g1: #3d84e6; --g2: #f1b633; --g3: #a274f2; --g4: #f4f4ee; --g5: #f27aa9; --g6: #ff8b3d;
+  --fd: "Black Han Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --fb: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --fq: "Nanum Myeongjo", "AppleMyungjo", "Batang", serif;
+  --fc: "Nanum Pen Script", "Apple SD Gothic Neo", "Malgun Gothic", cursive;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { height: 100%; font-size: clamp(15px, calc(.55vw + .75vh), 24px); }
+body {
+  height: 100%;
+  margin: 0;
+  font: 400 1rem/1.5 var(--fb);
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  color: var(--chalk);
+  background:
+    radial-gradient(60% 50% at 18% 12%, var(--chalk-4), transparent 70%),
+    radial-gradient(50% 45% at 85% 88%, var(--chalk-4), transparent 70%),
+    var(--board);
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; opacity: .4; }
+input { font: inherit; }
+:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+.paper :focus-visible { outline-color: var(--ink); }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; font-weight: 400; }
+p, blockquote, ol, ul, dl, dd { margin: 0; }
+ol, ul { padding: 0; list-style: none; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* 뼈대 */
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: .8rem;
+  padding-block: .8rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top { display: flex; align-items: center; gap: .6rem 1rem; min-width: 0; }
+.brand { font-family: var(--fd); font-size: 1.2rem; letter-spacing: .03em; white-space: nowrap; }
+.phases { display: flex; gap: .35rem; overflow-x: auto; min-width: 0; flex: 1 1 auto; padding-block: .2rem; scrollbar-width: none; }
+.phases::-webkit-scrollbar { display: none; }
+.phase { flex: none; font-size: .78rem; font-weight: 500; line-height: 1; padding: .5rem .75rem; border-radius: 999px; border: 1px solid var(--chalk-3); background: transparent; color: var(--chalk-2); white-space: nowrap; }
+.phase.done { color: var(--chalk); border-color: var(--chalk-2); }
+.phase[aria-current="step"] { background: var(--yellow); border-color: var(--yellow); color: var(--board-ink); font-weight: 700; }
+.tools { display: flex; align-items: center; gap: .45rem; flex: none; flex-wrap: wrap; }
+.timer { display: flex; align-items: center; gap: .2rem; padding: .3rem .35rem .3rem .45rem; border: 1px solid var(--chalk-3); border-radius: .6rem; }
+.t-preset, .t-btn, .tool-btn { border: 1px solid transparent; background: transparent; color: var(--chalk-2); font-size: .8rem; font-weight: 600; padding: .4rem .5rem; border-radius: .4rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.t-preset[aria-pressed="true"] { color: var(--chalk); border-color: var(--chalk-3); }
+.t-btn { color: var(--chalk); background: var(--chalk-4); }
+.tool-btn { border-color: var(--chalk-3); color: var(--chalk); }
+.t-display { font-size: 1.55rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 3.4ch; text-align: center; line-height: 1; padding-inline: .25rem; }
+.timer.running .t-display { color: var(--yellow); }
+.timer.done { animation: blink 1s ease-in-out 4; }
+.timer.done .t-display { color: var(--yellow); }
+@keyframes blink { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 3px var(--yellow); } }
+
+.stage { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(11rem, 15vw, 15rem); gap: 1.3rem; }
+.stage.no-rail { grid-template-columns: minmax(0, 1fr); }
+.main { min-height: 0; min-width: 0; overflow: auto; padding: .6rem .3rem .6rem .2rem; }
+
+.bottom { display: flex; align-items: center; gap: 1rem; min-width: 0; }
+.btn-prev { flex: none; background: transparent; border: 1px solid var(--chalk-3); color: var(--chalk); padding: .75rem 1rem; border-radius: .6rem; font-weight: 600; }
+.hint { flex: 1 1 auto; min-width: 0; color: var(--chalk-2); font-size: .9rem; }
+.hint.flash { color: var(--yellow); }
+.btn-next { flex: none; background: var(--yellow); color: var(--board-ink); border: 0; padding: .85rem 1.5rem; border-radius: .6rem; font-size: 1.15rem; font-weight: 700; box-shadow: 0 3px 0 var(--shade); }
+.btn-next:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--shade); }
+
+/* 공통 */
+.paper { background: var(--paper); color: var(--ink); border-radius: .5rem; box-shadow: 0 1px 0 var(--shade), 0 18px 36px -18px var(--shade); }
+.eyebrow { font-size: .85rem; font-weight: 600; letter-spacing: .12em; color: var(--chalk-2); }
+.scene-head { display: grid; gap: .2rem; }
+.scene-title { font-family: var(--fd); font-size: 2.3rem; line-height: 1.12; color: var(--chalk); }
+.scene-title .t2 { color: var(--yellow); }
+.chalk-ask { font-family: var(--fc); font-size: 2.2rem; line-height: 1.2; color: var(--yellow); }
+.chalk-ask.sm { font-size: 1.7rem; }
+.btn-chalk { background: transparent; border: 1.5px solid var(--chalk); color: var(--chalk); padding: .6rem 1rem; border-radius: .5rem; font-weight: 600; }
+.btn-chalk.sm { padding: .4rem .7rem; font-size: .85rem; }
+.link-btn { background: none; border: 0; color: var(--chalk-2); text-decoration: underline; text-underline-offset: 3px; padding: .4rem; font-size: .9rem; }
+.link-btn.warn { color: var(--yellow); }
+.fineprint { color: var(--chalk-2); font-size: .8rem; }
+.q-k { font-size: .8rem; font-weight: 700; letter-spacing: .12em; color: var(--ink-2); }
+.q-note { font-size: .88rem; color: var(--ink-2); }
+.enter { animation: rise .45s ease-out both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* 모둠 자석 */
+.token, .token-btn { width: 2.4rem; height: 2.4rem; border-radius: 50%; display: inline-grid; place-items: center; flex: none; font-weight: 700; font-size: 1.02rem; color: var(--board-ink); background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .55), transparent 45%), var(--gc); box-shadow: 0 3px 6px var(--shade), inset 0 -3px 0 rgba(0, 0, 0, .18); border: 0; }
+.token.xs { width: 1.55rem; height: 1.55rem; font-size: .78rem; box-shadow: 0 1px 3px var(--shade); }
+.token-btn { transition: transform .15s, opacity .15s; }
+.token-btn.placed { opacity: .45; }
+.token-btn.selected { opacity: 1; outline: 3px solid var(--yellow); outline-offset: 3px; transform: translateY(-2px); }
+.tray { display: flex; align-items: center; gap: .6rem .8rem; flex-wrap: wrap; padding: .55rem .8rem; border: 1px dashed var(--chalk-3); border-radius: .6rem; }
+.tray-k { font-family: var(--fc); font-size: 1.6rem; color: var(--yellow); line-height: 1; }
+.tray-tokens { display: flex; gap: .5rem; flex-wrap: wrap; }
+.tray-help { color: var(--chalk-2); font-size: .85rem; margin-left: auto; }
+
+/* 두더지 판 */
+.board { display: grid; gap: .5rem .9rem; }
+.board.b3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.board.b5 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.board.b5 > .hole { grid-column: span 2; }
+.board.b5 > .hole:nth-child(4) { grid-column: 2 / span 2; }
+.board.b5 > .hole:nth-child(5) { grid-column: 4 / span 2; }
+.hole { position: relative; display: grid; justify-items: center; align-content: start; gap: .15rem; padding: .3rem .3rem .5rem; border: 2px solid transparent; border-radius: .8rem; background: transparent; color: var(--chalk); text-align: center; min-width: 0; }
+.hole:hover { background: var(--chalk-4); }
+.hole.target { border-color: var(--yellow); border-style: dashed; }
+.hole-art { position: relative; display: block; width: 100%; }
+.hole-svg { display: block; width: 100%; height: auto; max-height: 22vh; overflow: visible; }
+.pit { fill: var(--pit); }
+.pit-in { fill: var(--pit-2); }
+.rim { fill: none; stroke: var(--rim); stroke-width: 3; stroke-linecap: round; }
+.m-body { fill: var(--mole); }
+.m-face { fill: var(--mole-face); }
+.m-eye { fill: var(--mole-eye); }
+.m-shine, .m-tooth { fill: var(--mole-tooth); }
+.m-nose { fill: var(--mole-nose); }
+.m-paw { fill: var(--mole-2); }
+.mole-g.doubt .m-body, .mole-g.doubt .m-paw { fill: var(--mole-doubt); }
+.mole-g.doubt .m-face { fill: var(--mole-doubt-face); }
+.qmark circle { fill: var(--yellow); }
+.qmark text { fill: var(--board-ink); font: 700 30px var(--fb); }
+.mole-g { transform: translateY(104px); transition: transform .55s cubic-bezier(.2, 1.45, .4, 1); }
+.mole-g.up { transform: translateY(0); }
+.mole-g.instant { transition: none; }
+.hole-label { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: .1rem .4rem; font-weight: 700; font-size: 1.12rem; line-height: 1.25; }
+.hole-num { font-family: var(--fd); color: var(--yellow); font-weight: 400; }
+.hole-chalk { font-family: var(--fc); font-size: 1.35rem; color: var(--chalk-2); line-height: 1; }
+.hole-tokens { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem; min-height: 1.65rem; }
+.kwang { position: absolute; left: 50%; top: 4%; width: 5.4rem; height: 4.2rem; display: grid; place-items: center; transform: translateX(-50%) rotate(-8deg); background: var(--yellow); color: var(--board-ink); font-family: var(--fd); font-size: 1.45rem; clip-path: polygon(50% 0%, 61% 19%, 83% 8%, 79% 31%, 100% 36%, 83% 52%, 97% 72%, 73% 72%, 71% 97%, 52% 81%, 33% 99%, 29% 75%, 5% 79%, 17% 56%, 0% 39%, 22% 31%, 14% 7%, 38% 19%); }
+.kwang.pop-in { animation: kwang .45s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes kwang { from { transform: translateX(-50%) rotate(-8deg) scale(.2); opacity: 0; } to { transform: translateX(-50%) rotate(-8deg) scale(1); opacity: 1; } }
+.blocked { position: absolute; left: 50%; top: 74%; transform: translate(-50%, -50%) rotate(-5deg); border: 2px dashed var(--chalk-2); color: var(--chalk); background: var(--board); font-weight: 700; font-size: .82rem; padding: .12rem .55rem; border-radius: 999px; white-space: nowrap; }
+.whack-label { font-size: .82rem; font-weight: 700; color: var(--board-ink); background: var(--yellow); border-radius: 999px; padding: .1rem .6rem; }
+.board.b5 > .hole.out { grid-column: 1 / -1; }
+.hole.out { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .3rem .8rem; border: 2px dashed var(--chalk-3); padding: .55rem .8rem; }
+.hole.out.target { border-color: var(--yellow); }
+.out-k { font-size: .78rem; font-weight: 700; letter-spacing: .12em; color: var(--chalk-2); }
+.out-name { font-family: var(--fd); font-size: 1.3rem; }
+.out-sub { font-family: var(--fc); font-size: 1.35rem; color: var(--chalk-2); line-height: 1; }
+.hole.out .hole-tokens { min-height: 0; }
+
+/* 시작 */
+.intro { max-width: 76rem; display: grid; gap: 1.3rem; padding-block: .8rem 1.5rem; }
+.intro-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+.intro-step { border: 1.5px solid var(--chalk-3); border-radius: .55rem; padding: 1rem 1.1rem; display: grid; gap: .45rem; align-content: start; color: var(--chalk-2); }
+.intro-step.done-step { color: var(--chalk); }
+.intro-step.now-step { border-color: var(--yellow); background: var(--yellow-wash); color: var(--chalk); }
+.intro-k { font-size: .8rem; font-weight: 700; letter-spacing: .12em; }
+.now-step .intro-k { color: var(--yellow); }
+.intro-t { font-family: var(--fd); font-size: 1.6rem; line-height: 1.15; }
+.intro-q { font-family: var(--fq); font-size: 1.08rem; line-height: 1.6; }
+.intro-pg { font-size: .8rem; color: var(--chalk-2); }
+.intro-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.6rem; }
+.big-q { font-family: var(--fc); font-size: 2.7rem; color: var(--yellow); line-height: 1.15; flex: 1 1 26rem; min-width: 0; }
+.tag-postit { flex: none; color: var(--ink); font-weight: 700; padding: .8rem 1rem; transform: rotate(-2deg); box-shadow: 0 10px 18px -10px var(--shade); }
+.tag-postit.yellow { background: var(--yellow); }
+.tag-postit.pink { background: var(--pink); transform: rotate(2deg); }
+.tag-postit span { display: block; font-family: var(--fc); font-size: 1.6rem; font-weight: 400; line-height: 1.1; }
+
+.cover { max-width: 84rem; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 1fr); gap: 1.6rem 2.4rem; align-items: center; padding-block: .6rem 1.5rem; }
+.cover-main { display: grid; gap: 1rem; min-width: 0; }
+.cover-title { font-family: var(--fd); font-size: clamp(3rem, 6.4vw, 6.2rem); line-height: .98; color: var(--chalk); }
+.cover-sub { font-family: var(--fc); font-size: 2.3rem; color: var(--yellow); line-height: 1.15; }
+.cover-rules { display: grid; gap: .4rem; font-size: 1.05rem; }
+.cover-rules li { display: grid; grid-template-columns: minmax(9.5rem, auto) minmax(0, 1fr); gap: .8rem; padding-block: .25rem; border-bottom: 1px dashed var(--chalk-3); }
+.cover-rules b { font-weight: 700; }
+.cover-rules span { color: var(--chalk-2); }
+.cover-rule-note { font-family: var(--fc); font-size: 1.6rem; color: var(--yellow); line-height: 1.1; }
+.cover-set { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.cover-set > span { color: var(--chalk-2); font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--chalk-3); border-radius: .6rem; overflow: hidden; }
+.seg-btn { background: transparent; border: 0; padding: .6rem 1rem; color: var(--chalk-2); font-weight: 600; }
+.seg-btn[aria-pressed="true"] { background: var(--chalk); color: var(--board-ink); }
+.cover-keys { color: var(--chalk-2); font-size: .8rem; }
+.cover-side { display: grid; gap: 1rem; min-width: 0; }
+.cover-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; }
+.cover-board .mole-g { animation: peek 4.8s ease-in-out infinite; }
+.cover-board .cb-hole:nth-child(2) .mole-g { animation-delay: 1.6s; }
+.cover-board .cb-hole:nth-child(3) .mole-g { animation-delay: 3.2s; }
+@keyframes peek { 0%, 4% { transform: translateY(104px); } 10%, 26% { transform: translateY(0); } 32%, 100% { transform: translateY(104px); } }
+.goals { padding: 1rem 1.2rem; display: grid; gap: .5rem; }
+.goals ol { display: grid; gap: .35rem; counter-reset: gl; }
+.goals li { counter-increment: gl; display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: .4rem; font-size: .98rem; line-height: 1.5; }
+.goals li::before { content: counter(gl) "."; font-weight: 700; }
+
+/* AI 영상 */
+.video-scene { display: grid; gap: 1rem; }
+.video-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(13rem, 1fr); gap: 1.2rem; align-items: start; }
+.video-col { display: grid; gap: .4rem; min-width: 0; }
+.video-frame { aspect-ratio: 16 / 9; width: min(100%, calc((100vh - 18rem) * 16 / 9)); max-width: 100%; border: 2px dashed var(--chalk-3); border-radius: .6rem; display: grid; place-items: center; background: var(--board-ink); overflow: hidden; }
+.video-frame.has { border-style: solid; border-color: var(--pit-2); background: var(--pit-2); }
+.vid-mount, .vid-mount video { width: 100%; height: 100%; display: block; }
+.vid-mount video { background: var(--pit-2); }
+.vid-empty { display: grid; gap: .7rem; justify-items: center; text-align: center; padding: 1.5rem; }
+.vid-empty-t { font-family: var(--fd); font-size: 1.8rem; }
+.vid-empty-s { font-size: .85rem; color: var(--chalk-2); max-width: 28rem; }
+.vid-file { font-size: .8rem; color: var(--chalk-2); }
+.chapters { display: grid; gap: .6rem; }
+.chapters li { border: 1.5px solid var(--chalk-3); border-radius: .55rem; padding: .7rem .9rem; display: grid; gap: .1rem; }
+.ch-year { font-family: var(--fd); font-size: 1.7rem; line-height: 1.1; color: var(--yellow); }
+.ch-t { font-weight: 700; }
+.ch-s { font-size: .85rem; color: var(--chalk-2); }
+
+/* 기억력 두더지 */
+.quiz, .bet { display: grid; gap: .9rem; }
+.quiz-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(16rem, 1fr); gap: 1.3rem; align-items: start; }
+.board-zone { display: grid; gap: .7rem; min-width: 0; }
+.side-col { display: grid; gap: .7rem; min-width: 0; }
+.ask-card { padding: 1.1rem 1.25rem; display: grid; gap: .55rem; }
+.ask-opts { display: grid; gap: .35rem; font-size: 1.2rem; font-weight: 700; }
+.ask-opts span { font-family: var(--fd); font-weight: 400; margin-right: .4rem; }
+.result-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem .8rem; font-size: 1.15rem; font-weight: 700; }
+.result-line b { color: var(--yellow); }
+.pt { display: inline-block; background: var(--yellow); color: var(--board-ink); border-radius: 999px; padding: .05rem .6rem; font-size: .9rem; font-weight: 700; }
+.records { display: grid; gap: .55rem; align-content: start; }
+.rec { background: var(--paper); color: var(--ink); border-radius: .45rem; padding: .75rem 1rem .7rem; display: grid; gap: .3rem; }
+.rec-lead { font-size: .95rem; font-weight: 700; }
+.rec-text { font-size: 1rem; line-height: 1.55; }
+.rec-quote { font-family: var(--fq); font-size: 1.04rem; line-height: 1.62; }
+.rec-src { font-size: .76rem; color: var(--ink-2); }
+.bars { display: grid; gap: .3rem; margin-top: .15rem; }
+.bars-k { font-size: .78rem; font-weight: 700; color: var(--ink-2); letter-spacing: .06em; }
+.bar-row { display: grid; grid-template-columns: 3.4rem minmax(0, 1fr) 7.2rem; gap: .6rem; align-items: center; font-size: .88rem; }
+.bar { height: .8rem; background: var(--paper-2); border-radius: 999px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ink); border-radius: 999px; }
+.bar-v { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* 밸런스 게임 */
+.balance { display: grid; gap: 1.1rem; }
+.vs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 1rem; align-items: stretch; }
+.side { border: 2px solid var(--chalk-3); border-radius: .8rem; padding: 1.3rem 1.4rem; display: grid; gap: 1.2rem; align-content: space-between; min-height: 15rem; min-width: 0; }
+.side.left { border-color: var(--g1); background: linear-gradient(160deg, rgba(61, 132, 230, .16), transparent 60%); }
+.side.right { border-color: var(--g6); background: linear-gradient(200deg, rgba(255, 139, 61, .16), transparent 60%); text-align: right; }
+.side-k { font-size: .85rem; font-weight: 700; letter-spacing: .12em; color: var(--chalk-2); }
+.side-t { font-family: var(--fd); font-size: clamp(1.9rem, 3.3vw, 3.4rem); line-height: 1.15; }
+.counter { display: flex; align-items: center; gap: .6rem; }
+.side.right .counter { justify-content: flex-end; }
+.counter button { width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 1.5px solid var(--chalk-3); background: transparent; font-weight: 700; }
+.counter b { font-family: var(--fd); font-size: 2.2rem; font-weight: 400; min-width: 2ch; text-align: center; font-variant-numeric: tabular-nums; }
+.counter span { font-size: .8rem; color: var(--chalk-2); }
+.vs-mark { align-self: center; font-family: var(--fd); font-size: 2.4rem; color: var(--yellow); }
+.bal-sum { display: grid; gap: .5rem; max-width: 60rem; }
+.bal-sum li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: .8rem; align-items: center; padding: .5rem .8rem; border: 1px dashed var(--chalk-3); border-radius: .5rem; }
+.bal-sum li span:last-child { text-align: right; }
+.bal-sum b { font-variant-numeric: tabular-nums; color: var(--yellow); margin-inline: .3rem; }
+.bal-sum i { font-style: normal; color: var(--chalk-2); font-size: .85rem; }
+.link-line { font-size: clamp(1.7rem, 2.9vw, 3rem); font-weight: 700; line-height: 1.4; text-wrap: balance; }
+.link-line mark { background: none; color: var(--yellow); text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
+
+/* 두더지 베팅 */
+.bet-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(17rem, 1fr); gap: 1.3rem; align-items: start; }
+.rules25 { padding: 1rem 1.2rem; display: grid; gap: .55rem; }
+.rules-dl { display: grid; gap: .4rem; }
+.rules-dl div { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: .6rem; padding-top: .4rem; border-top: 1px dashed var(--rule); font-size: 1rem; line-height: 1.5; }
+.rules-dl dt { font-weight: 700; }
+.ncard { padding: 1rem 1.2rem; display: grid; gap: .45rem; }
+.ncard.counter { background: var(--paper-2); box-shadow: inset 0 0 0 2px var(--seal), 0 18px 36px -18px var(--shade); }
+.nc-k { display: flex; flex-wrap: wrap; gap: .3rem .6rem; align-items: center; font-size: .78rem; font-weight: 700; letter-spacing: .1em; color: var(--ink-2); }
+.nc-tag { letter-spacing: 0; border-radius: 999px; padding: .1rem .55rem; font-size: .78rem; background: var(--ink); color: var(--paper); }
+.nc-tag.doubt { background: var(--yellow); color: var(--ink); }
+.nc-head { font-family: var(--fd); font-size: 1.65rem; line-height: 1.15; }
+.nc-text { font-size: 1.02rem; line-height: 1.6; }
+.nc-ask { font-family: var(--fc); font-size: 1.75rem; color: var(--seal); line-height: 1.1; }
+.nc-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.nc-split ul { background: var(--card); border-radius: .4rem; padding: .55rem .7rem; display: grid; gap: .3rem; font-size: .92rem; line-height: 1.45; }
+.nc-split .k { font-weight: 700; font-size: .8rem; letter-spacing: .08em; }
+.nc-split .down .k { color: var(--ink-2); }
+.nc-split .up .k { color: var(--seal); }
+.nc-older { display: grid; gap: .3rem; }
+.nc-older li { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .6rem; padding-top: .35rem; border-top: 1px dashed var(--chalk-3); font-size: .88rem; color: var(--chalk-2); }
+.nc-older .nc-tag { background: var(--chalk-3); color: var(--chalk); }
+.nc-older .nc-tag.doubt { background: var(--yellow); color: var(--board-ink); }
+.cardback { display: grid; place-content: center; text-align: center; gap: .4rem; border-radius: .5rem; padding: 1.2rem; background: repeating-linear-gradient(135deg, var(--board-2) 0 10px, var(--board) 10px 20px); border: 2px dashed var(--chalk-3); min-height: 8rem; color: var(--chalk); font-family: var(--fd); font-size: 1.5rem; width: 100%; }
+.cardback span { font-family: var(--fb); font-size: .85rem; color: var(--chalk-2); }
+.sum { padding: 1rem 1.2rem; display: grid; gap: .6rem; }
+.sum-table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.sum-table th, .sum-table td { text-align: left; padding: .45rem .4rem; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.sum-table th { font-size: .78rem; letter-spacing: .08em; color: var(--ink-2); }
+.sum-table td:last-child { font-weight: 700; }
+.sum-table .g { display: flex; align-items: center; gap: .45rem; white-space: nowrap; }
+.plus { color: var(--seal); }
+
+/* ④ 정책과 반박 · 모둠 칸 */
+.board-scene { display: grid; gap: .75rem; }
+.bd-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .6rem 1.2rem; }
+.steps { display: flex; gap: .45rem; flex-wrap: wrap; }
+.step { border: 1.5px solid var(--chalk-3); border-radius: 999px; padding: .35rem .9rem; color: var(--chalk-2); font-weight: 600; font-size: .88rem; }
+.step b { font-variant-numeric: tabular-nums; font-weight: 700; margin-left: .3rem; }
+.step.done { color: var(--chalk); border-color: var(--chalk-2); }
+.step.now { background: var(--yellow); color: var(--board-ink); border-color: var(--yellow); }
+.bd-task { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem 1.2rem; padding: .7rem 1rem; }
+.bd-main { font-size: 1.15rem; font-weight: 700; line-height: 1.45; flex: 1 1 28rem; min-width: 0; }
+.bd-ex { font-size: .92rem; color: var(--ink-2); }
+.bd-ex b { font-weight: 700; margin-right: .35rem; color: var(--ink); }
+.bd-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem 1.2rem; }
+.bd-hint { font-family: var(--fc); font-size: 1.75rem; color: var(--yellow); line-height: 1.1; }
+.bd-cond { font-size: .85rem; color: var(--chalk-2); }
+.mole-log { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .55rem; font-size: .88rem; color: var(--chalk-2); padding: .4rem .7rem; border: 1px dashed var(--chalk-3); border-radius: .5rem; }
+.ml-k { font-family: var(--fc); font-size: 1.4rem; color: var(--yellow); line-height: 1; }
+.mole-log b { color: var(--chalk); font-weight: 700; }
+.mole-log .ours b { color: var(--yellow); }
+.bd-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; align-items: start; }
+.bd-grid.g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bx { background: var(--paper); color: var(--ink); border-radius: .6rem; padding: .7rem .85rem .8rem; display: grid; gap: .25rem; min-width: 0; box-shadow: 0 1px 0 var(--shade), 0 14px 28px -16px var(--shade); }
+.bx-head { display: flex; align-items: center; gap: .5rem; }
+.bx-head b { font-size: 1.05rem; }
+.bx-head .link-btn { margin-left: auto; color: var(--ink-2); font-size: .82rem; padding: .2rem .3rem; }
+.bx-k { font-size: .76rem; font-weight: 700; letter-spacing: .04em; color: var(--ink-2); margin-top: .3rem; }
+.bx-k.on { color: var(--seal); }
+.bx-t { font-size: 1rem; line-height: 1.5; font-weight: 500; white-space: pre-wrap; }
+.bx-empty { color: var(--ink-2); opacity: .6; font-weight: 400; }
+.bx-in { display: block; width: 100%; min-width: 0; resize: none; overflow: hidden; min-height: 3.3rem; font: 500 1rem/1.5 var(--fb); color: var(--ink); background: var(--card); border: 2px solid var(--yellow); border-radius: .45rem; padding: .45rem .6rem; }
+.bx-in[data-f="reply"] { min-height: 2.5rem; }
+.bx-in::placeholder { color: var(--ink-2); opacity: .55; }
+.bx-in:focus { outline: none; border-color: var(--seal); }
+.bx.big { padding: 1.3rem 1.7rem 1.5rem; gap: .45rem; }
+.bx.big .bx-head b { font-size: 1.6rem; }
+.bx.big .bx-k { font-size: .95rem; }
+.bx.big .bx-t, .bx.big .bx-in { font-size: 1.85rem; line-height: 1.4; }
+.focus-tabs { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.focus-tab { border: 1.5px solid var(--chalk-3); background: transparent; border-radius: .5rem; padding: .35rem .7rem; font-size: .85rem; font-weight: 600; color: var(--chalk-2); }
+.focus-tab[aria-pressed="true"] { background: var(--chalk); color: var(--board-ink); border-color: var(--chalk); }
+.votes-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem 1.2rem; padding: .5rem .8rem; border: 1px dashed var(--chalk-3); border-radius: .6rem; }
+.vote-group { display: grid; gap: .3rem; }
+.vote-k { font-weight: 700; font-size: .92rem; }
+.vote-row { display: flex; gap: .35rem; flex-wrap: wrap; }
+.vote-btn { width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 0; font-weight: 700; color: var(--board-ink); background: var(--gc); opacity: .55; }
+.vote-btn[aria-pressed="true"] { opacity: 1; outline: 3px solid var(--yellow); outline-offset: 2px; }
+.vote-res { font-size: .82rem; color: var(--chalk-2); }
+.vote-res b { color: var(--yellow); }
+
+/* ⑤ 다시 묻기 */
+.reflect { display: grid; gap: 1rem; }
+.pwall { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; }
+.pwall.g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pw { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .6rem; align-items: start; background: var(--paper); color: var(--ink); border-radius: .55rem; padding: .7rem .85rem; min-width: 0; }
+.pw-body { display: grid; gap: .25rem; min-width: 0; }
+.pw-t { font-weight: 700; font-size: 1.05rem; line-height: 1.45; }
+.pw-c { font-size: .88rem; line-height: 1.45; color: var(--ink-2); }
+.tally { display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; }
+.tally-box { display: flex; align-items: center; gap: 1rem; border: 2px solid var(--chalk-3); border-radius: .7rem; padding: .5rem .9rem; }
+.tally-k { font-family: var(--fd); font-size: 1.45rem; }
+.again { display: grid; gap: 1.2rem; }
+.postits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem; max-width: 60rem; }
+.postit { min-height: 11rem; padding: 1.1rem 1.2rem; color: var(--ink); box-shadow: 0 14px 22px -12px var(--shade); display: grid; align-content: space-between; gap: 1rem; }
+.postit.yellow { background: var(--yellow); transform: rotate(-1.5deg); }
+.postit.pink { background: var(--pink); transform: rotate(1.2deg); }
+.postit-k { font-weight: 700; letter-spacing: .1em; font-size: .85rem; }
+.postit-t { font-family: var(--fc); font-size: 2.2rem; line-height: 1.15; }
+
+/* 점수 · 예고 */
+.finale { display: grid; gap: 1rem; }
+.rank { display: grid; gap: .5rem; max-width: 62rem; }
+.rank-row { position: relative; display: grid; grid-template-columns: 2.2rem auto 4.6rem minmax(0, 1fr) 3.4rem; gap: .2rem .8rem; align-items: center; padding: .55rem .9rem; border: 1.5px solid var(--chalk-3); border-radius: .6rem; }
+.rank-row.win { border-color: var(--yellow); background: var(--yellow-wash); }
+.rank-n { font-family: var(--fd); font-size: 1.5rem; color: var(--chalk-2); }
+.rank-name { font-weight: 700; }
+.rank-bar { height: .9rem; background: var(--chalk-4); border-radius: 999px; overflow: hidden; }
+.rank-bar i { display: block; height: 100%; background: var(--yellow); border-radius: 999px; transform-origin: left; animation: grow .9s ease-out both; }
+@keyframes grow { from { transform: scaleX(0); } }
+.rank-total { font-family: var(--fd); font-size: 1.9rem; text-align: right; font-variant-numeric: tabular-nums; }
+.rank-break { grid-column: 3 / -1; font-size: .78rem; color: var(--chalk-2); }
+.seal { position: absolute; top: -.9rem; right: 4.6rem; transform: rotate(-9deg); border: 3px double var(--seal); color: var(--seal); background: var(--paper); font-family: var(--fd); font-size: 1rem; line-height: 1; padding: .35rem .45rem .3rem; border-radius: .3rem; letter-spacing: .08em; animation: stamp .5s cubic-bezier(.2, .9, .3, 1.25) both; }
+@keyframes stamp { 0% { opacity: 0; transform: rotate(-9deg) scale(2.4); } 100% { opacity: 1; transform: rotate(-9deg) scale(1); } }
+.teaser-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(13rem, 1fr); gap: 1.2rem; align-items: start; }
+.storyboard { display: grid; gap: .55rem; }
+.sb { border: 1.5px solid var(--chalk-3); border-radius: .5rem; padding: .65rem .9rem; display: grid; gap: .15rem; }
+.sb-k { font-family: var(--fd); color: var(--yellow); }
+.next-line { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.2rem; font-size: 1.25rem; font-weight: 700; }
+
+/* 점수판 */
+.rail { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: .5rem; padding-left: 1rem; border-left: 1.5px dashed var(--chalk-3); }
+.rail-head { font-family: var(--fc); font-size: 2.1rem; color: var(--yellow); line-height: 1; }
+.score-list { display: grid; gap: .4rem; }
+.score-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "tok name num" "tok adj num"; align-items: center; gap: .1rem .55rem; padding: .4rem .55rem; border: 1.5px solid var(--chalk-3); border-radius: .55rem; }
+.score-row .token { grid-area: tok; }
+.score-row.lead { border-color: var(--yellow); background: var(--yellow-wash); }
+.score-name { grid-area: name; font-weight: 700; font-size: .92rem; }
+.score-num { grid-area: num; font-family: var(--fd); font-weight: 400; font-size: 1.9rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.score-num.bump { animation: bump .7s ease-out; }
+@keyframes bump { 30% { transform: scale(1.45); color: var(--yellow); } }
+.score-adj { grid-area: adj; display: flex; gap: .3rem; }
+.score-adj button { border: 1px solid var(--chalk-3); background: transparent; color: var(--chalk-2); font-size: .72rem; font-weight: 700; padding: .1rem .45rem; border-radius: .35rem; }
+.rail-cap { font-size: .78rem; color: var(--chalk-2); }
+
+/* 출처 */
+.overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(8, 18, 14, .74); padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.sources-card { width: min(54rem, 100%); max-height: 86%; overflow: auto; padding: 1.3rem 1.5rem; display: grid; gap: .8rem; }
+.sources-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.sources-head h2 { font-family: var(--fd); font-size: 1.6rem; }
+.src-close { border: 1px solid var(--rule); background: var(--card); color: var(--ink); border-radius: .4rem; padding: .45rem .8rem; font-weight: 600; }
+.src-list { list-style: decimal; padding-left: 1.3rem; display: grid; gap: .4rem; font-size: .93rem; line-height: 1.5; }
+.src-list a { color: var(--ink); text-underline-offset: 3px; }
+
+/* 준비 창 */
+.setup-row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding-top: .9rem; border-top: 1px dashed var(--rule); }
+.setup-k { font-weight: 700; }
+.setup-only { display: grid; gap: .9rem; }
+.join-body.solo { grid-template-columns: minmax(0, 1fr); }
+.paper .seg { border-color: var(--rule); }
+.paper .seg-btn { color: var(--ink-2); }
+.paper .seg-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.paper .link-btn { color: var(--ink-2); }
+.paper .link-btn.warn { color: var(--seal); font-weight: 600; }
+.btn-next.sm { font-size: 1rem; padding: .6rem 1.2rem; margin-left: auto; }
+.rules-ch .ch-year { font-size: 1.45rem; }
+.rules-ch .ch-t { font-size: 1.02rem; line-height: 1.5; }
+.again-q { font-family: var(--fc); font-size: clamp(2.2rem, 3.6vw, 3.4rem); color: var(--yellow); line-height: 1.2; max-width: 60rem; }
+
+/* 실시간: 폰 참여 */
+.live-chip { font-variant-numeric: tabular-nums; }
+.live-chip.warn { border-color: var(--yellow); color: var(--yellow); }
+.join-mini { flex: none; display: flex; align-items: center; gap: .85rem; padding: .55rem .9rem .55rem .55rem; border-radius: .7rem; border: 1.5px solid var(--chalk-3); background: var(--chalk-4); color: var(--chalk); text-align: left; }
+.join-mini-qr { width: 9.5rem; height: 9.5rem; display: block; background: #fff; border-radius: .35rem; overflow: hidden; flex: none; }
+.join-mini-qr svg, .join-qr svg { display: block; width: 100%; height: 100%; }
+.join-mini-t { display: grid; gap: .15rem; min-width: 0; }
+.join-mini-t b { font-family: var(--fd); font-weight: 400; font-size: 1.35rem; }
+.join-mini-t span { color: var(--chalk-2); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.join-mini-u { word-break: break-all; max-width: 14rem; }
+.cover-live { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; color: var(--chalk-2); font-size: .9rem; }
+.cl-g { display: inline-flex; align-items: center; gap: .3rem; font-weight: 700; color: var(--chalk); font-variant-numeric: tabular-nums; }
+.join-card-ov { width: min(62rem, 100%); max-height: 92%; overflow: auto; padding: 1.3rem 1.5rem 1.5rem; display: grid; gap: 1rem; }
+.join-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.6rem; align-items: center; }
+.join-qr.big { width: min(100%, 26rem, 60vh); aspect-ratio: 1; justify-self: center; background: #fff; }
+.join-noqr { font-size: .95rem; color: var(--ink-2); padding: 1rem; }
+.join-side { display: grid; gap: .7rem; min-width: 0; }
+.join-k { font-weight: 700; }
+.join-url { font-family: var(--fd); font-size: 1.55rem; line-height: 1.2; word-break: break-all; user-select: all; }
+.join-room { font-size: 1.1rem; display: flex; align-items: baseline; gap: .6rem; }
+.join-room b { font-family: var(--fd); font-weight: 400; font-size: 3.4rem; line-height: 1; letter-spacing: .12em; }
+.join-groups { display: flex; flex-wrap: wrap; gap: .4rem .9rem; }
+.join-groups li { display: flex; align-items: center; gap: .35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.join-status { font-size: .88rem; color: var(--ink-2); }
+.join-status.warn { color: var(--seal); font-weight: 600; }
+.vote-btn { position: relative; }
+.vote-row { gap: .5rem .9rem; }
+.vote-n { position: absolute; top: -.55rem; right: -.65rem; min-width: 1.3rem; height: 1.3rem; padding: 0 .28rem; border-radius: 999px; background: var(--yellow); color: var(--board-ink); font-style: normal; font-size: .74rem; font-weight: 700; line-height: 1.3rem; text-align: center; box-shadow: 0 1px 2px var(--shade); }
+.vote-res .link-btn { font-size: .8rem; padding: 0 .2rem; color: var(--yellow); }
+.pairs { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; align-items: start; }
+.pair { position: relative; display: grid; border-radius: .45rem; overflow: hidden; box-shadow: 0 10px 18px -12px var(--shade); color: var(--ink); min-width: 0; }
+.pair .token { position: absolute; top: .4rem; right: .4rem; }
+.pair-a { background: var(--yellow); padding: .5rem 2.3rem .5rem .75rem; font-size: 1.02rem; line-height: 1.42; }
+.pair-b { background: var(--pink); padding: .5rem .75rem .6rem; font-size: 1.12rem; line-height: 1.42; font-weight: 600; }
+.pair-a::before, .pair-b::before { display: block; font-size: .68rem; font-weight: 700; letter-spacing: .1em; color: var(--ink-2); }
+.pair-a::before { content: "처음"; }
+.pair-b::before { content: "지금"; }
+
+@media (max-width: 860px) {
+  html { font-size: 15px; }
+  .app { height: auto; min-height: 100%; }
+  .top { flex-wrap: wrap; }
+  .brand { flex-basis: 100%; }
+  .tools { flex: 1 1 100%; min-width: 0; }
+  .phases { order: 3; flex-basis: 100%; }
+  .stage, .stage.no-rail { grid-template-columns: minmax(0, 1fr); }
+  .main { overflow: visible; }
+  .rail { border-left: 0; padding-left: 0; border-top: 1.5px dashed var(--chalk-3); padding-top: 1rem; overflow: visible; }
+  .score-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .intro-grid, .cover, .video-grid, .quiz-grid, .bet-grid, .bd-grid, .bd-grid.g4, .votes-row, .teaser-grid, .pwall, .pwall.g4, .postits, .join-body { grid-template-columns: minmax(0, 1fr); }
+  .vs { grid-template-columns: minmax(0, 1fr); }
+  .side.right { text-align: left; }
+  .side.right .counter { justify-content: flex-start; }
+  .board.b5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .board.b5 > .hole, .board.b5 > .hole:nth-child(4), .board.b5 > .hole:nth-child(5) { grid-column: auto; }
+  .board.b5 > .hole.out { grid-column: 1 / -1; }
+  .nc-split { grid-template-columns: minmax(0, 1fr); }
+  .rank-row { grid-template-columns: 2rem auto minmax(0, 1fr) 3rem; }
+  .rank-bar { display: none; }
+  .rank-break { grid-column: 2 / -1; }
+  .cover-rules li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .bottom { position: sticky; bottom: 0; z-index: 5; background: var(--board); padding-block: .6rem calc(.6rem + env(safe-area-inset-bottom, 0px)); }
+  .hint { display: none; }
+  .video-frame { width: 100%; }
+}
+@media (min-width: 861px) and (max-height: 820px) {
+  .hole-svg { max-height: 19vh; }
+  .scene-title { font-size: 2rem; }
+  .rec { padding: .6rem .85rem; gap: .2rem; }
+  .rec-quote, .rec-text { font-size: .95rem; line-height: 1.5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mole-g, .token-btn { transition: none; }
+  .enter, .kwang.pop-in, .timer.done, .seal, .rank-bar i, .score-num.bump { animation: none; }
+  .cover-board .mole-g { animation: none; }
+  .cover-board .cb-hole:nth-child(2) .mole-g { transform: none; }
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">60년, 두더지 잡기</div>
+    <nav class="phases" id="phases" aria-label="진행 단계"></nav>
+    <div class="tools">
+      <div class="timer" id="timer" role="group" aria-label="타이머">
+        <button type="button" class="t-preset" data-sec="30">0:30</button>
+        <button type="button" class="t-preset" data-sec="60">1:00</button>
+        <button type="button" class="t-preset" data-sec="90">1:30</button>
+        <button type="button" class="t-preset" data-sec="120">2:00</button>
+        <span class="t-display" id="tDisplay">1:30</span>
+        <button type="button" class="t-btn" id="tPlay">시작</button>
+        <button type="button" class="t-btn" id="tReset" aria-label="타이머 되돌리기">↺</button>
+      </div>
+      <button type="button" class="tool-btn live-chip" id="liveChip" hidden></button>
+      <button type="button" class="tool-btn" data-open-sources>출처</button>
+      <button type="button" class="tool-btn" id="fs">전체 화면</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <main class="main" id="main"></main>
+    <aside class="rail" id="rail" aria-label="점수판"></aside>
+  </div>
+
+  <footer class="bottom">
+    <button type="button" class="btn-prev" id="prev">← 이전</button>
+    <p class="hint" id="hint"></p>
+    <button type="button" class="btn-next" id="next">게임 표지 →</button>
+  </footer>
+</div>
+
+<div class="overlay" id="sources" hidden>
+  <div class="paper sources-card" role="dialog" aria-modal="true" aria-labelledby="srcTitle">
+    <div class="sources-head"><h2 id="srcTitle">자료 출처</h2><button type="button" class="src-close" id="srcClose">닫기</button></div>
+    <ol class="src-list" id="srcList"></ol>
+    <p class="rec-src">뉴스 카드의 숫자와 인용은 모두 위 자료에서 가져왔습니다. AI 영상은 기록을 바탕으로 재구성한 장면입니다.</p>
+  </div>
+</div>
+
+<div class="overlay" id="join" hidden>
+  <div class="paper join-card-ov" role="dialog" aria-modal="true" aria-labelledby="joinTitle">
+    <div class="sources-head"><h2 id="joinTitle">게임 준비</h2><button type="button" class="src-close" id="joinClose">닫기</button></div>
+    <div class="join-body" id="joinBody"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ── 내용 ─────────────────────────────── */
+  const NUMS = ['①', '②', '③', '④', '⑤'];
+  const HOLES3 = [
+    { name: '중학교 입시', chalk: '국6병' },
+    { name: '고등학교 입시', chalk: '중3병' },
+    { name: '대학 입시', chalk: '고3병' },
+  ];
+  const QUIZ = [
+    {
+      hit: 0, answer: 1, ask: '1969년, ‘중학교 입시’를 쾅!', ask2: '두더지는 어디서 튀어나왔을까?', whack: '1969 · 중학교 무시험 추첨',
+      records: [
+        { lead: '교과서 126쪽', quote: '“1969학년도부터 중학교 입학시험 제도를 폐지하고 추첨 입학 제도를 실시하여 교육 기회를 확대하였다.”' },
+        { lead: '그 뒤', quote: '“…초등학교의 입시준비교육이 중학교 단계로 옮겨가면서 고등학교 입시준비는 더욱 과열된 양상으로 나타난 것이다.”', src: '국가기록원 「기록으로 만나는 대한민국: 중·고교 평준화」' },
+      ],
+    },
+    {
+      hit: 1, answer: 2, ask: '1974년, ‘고등학교 입시’를 쾅!', ask2: '이번엔 어디서?', whack: '1974 · 고교 평준화',
+      records: [
+        { lead: '교과서 126쪽', quote: '“이에 고등학교 입시 경쟁을 완화하기 위해 1974학년도부터 서울과 부산을 시작으로 고등학교 평준화 정책을 실시하였다.”' },
+        { lead: '그 뒤 · 대학 입시', text: '대학에 다시 도전하는 재수생이 크게 늘었습니다.', bars: true, src: '강창동(2007), 『교육문제연구』 28' },
+        { lead: '그 뒤 · 특목고', quote: '과학고(1982)·외국어고(1990) 같은 특수목적고로 “비평준화 시대의 ‘명문고’ 혹은 ‘일류고’와 마찬가지인 진학 열풍이 이어지고 있음을 시사한다.”', src: '국가기록원 「기록으로 만나는 대한민국: 중·고교 평준화」' },
+        { lead: '평가는 엇갈립니다', quote: '“‘실력 없는 평준화세대’를 길러낼 수 있다는 우려도 있으나, 상급 학교 교육을 받을 균등한 기회를 보장하는 제도적 장치를 마련했다는 이점도 있다.”', src: '국가기록원' },
+      ],
+    },
+  ];
+  const BARS = `<div class="bars" role="img" aria-label="재수생 수: 1970년 약 4만 5천 명, 1980년 약 18만 5천 명">
+      <p class="bars-k">재수생 수</p>
+      <div class="bar-row"><span>1970년</span><span class="bar"><i style="width:24.3%"></i></span><span class="bar-v">약 4만 5천 명</span></div>
+      <div class="bar-row"><span>1980년</span><span class="bar"><i style="width:100%"></i></span><span class="bar-v">약 18만 5천 명</span></div>
+    </div>`;
+
+  const BALANCE = [
+    ['진로에 맞는 과목', '1등급 받기 쉬운 과목'],
+    ['좋아하지만 듣는 사람이 적은 과목', '사람이 많아 등급 따기 좋은 과목'],
+    ['학교에 남아 내신 싸움', '자퇴하고 수능 올인'],
+  ];
+
+  const HOLES5 = ['내신·과목 선택', '수능', '사교육', '대학별 평가', '자퇴·검정고시'];
+  const OUT = 5;
+  const RULES25 = [
+    ['졸업', '과목을 골라 3년간 192학점을 채운다(고교학점제)'],
+    ['내신', '5등급, 1등급은 상위 10%. 상대평가는 그대로'],
+    ['수능', '2028학년도부터 선택과목 없이 모두 같은 시험'],
+  ];
+  const RULES25_SRC = '서울신문 2023. 6. 21. · 뉴시스 2025. 1. 2.';
+
+  const CARDS = [
+    { holes: [4], effect: 'pop', kicker: '뉴스 카드 1', head: '검정고시 출신 수능 접수 2만 2,355명',
+      text: '2026학년도 수능 접수자 가운데 검정고시 출신이 2만 2,355명으로 1년 전(2만 109명)보다 늘었다. 31년 만에 가장 많다.',
+      src: '한국경제·연합뉴스 2026. 6. 7.' },
+    { holes: [4], effect: 'pop', kicker: '뉴스 카드 2', head: '고1 학업중단 1만 450명',
+      text: '여러분이 고1이던 2025년, 고1 학업중단자가 1만 450명으로 1년 전보다 603명 늘었다. 2019년 집계를 시작한 뒤 처음으로 1만 명을 넘었다.',
+      src: '종로학원 분석(학교알리미) · 한국경제·연합뉴스 2026. 6. 7.' },
+    { holes: [4], effect: 'doubt', counter: true, kicker: '반론 카드', head: '교육부의 반론',
+      text: '일반고 1학년 자퇴는 5등급제 전부터 늘고 있었고, 2025학년도 증가폭은 2022학년도(1,768명)·2023학년도(1,493명)보다 작았다. 자퇴생 평균 등급은 3.7등급(5등급제)으로, 교육부는 “오히려 하위 등급 학생이 많은 것으로 확인된다”고 밝혔다.',
+      src: '헤럴드경제 2026. 7.', ask: '이 신호, 믿어도 될까? 30초 동안 따져 보세요.' },
+    { holes: [1], effect: 'pop', kicker: '뉴스 카드 3', head: '2028 대입, 수능 최저가 늘었다',
+      text: '여러분이 치를 2028학년도 대입에서 연세대는 학생부종합(추천형) 전형에 수능 최저학력기준을 도입했고, 서강대는 학생부종합 일반Ⅱ 전형에 ‘3개 영역 등급 합 7 이내’를 새로 두었다.',
+      src: '매일신문 칼럼 2026. 6. 5.' },
+    { holes: [3, 0], effect: 'pop', kicker: '뉴스 카드 4', head: '서울대, 교과역량평가 40%',
+      text: '서울대는 2028학년도 정시 2단계에서 수능 60%에 교과역량평가 40%를 더한다. 모집단위별 권장과목을 들었는지도 수시 서류평가와 정시 교과역량평가에 반영한다.',
+      src: '메트로신문 칼럼 2026. 10. 22.' },
+    { holes: [2], effect: 'doubt', kicker: '뉴스 카드 5', head: '사교육비, 줄었을까 늘었을까',
+      split: {
+        down: ['총액 27조 5천억 원 (5.7% 감소)', '참여율 75.7% (4.3%p 감소)', '학생 수 502만 명 (12만 명 감소)'],
+        up: ['사교육 받는 학생 1인당 월 60만 4천 원 (2.0% 증가, 처음 60만 원대)', '고등학생은 79만 3천 원 (2.6% 증가)'],
+      },
+      text: '교육부는 감소 원인을 “하나로 단정하긴 어렵다”고 했다.',
+      src: '국가데이터처·교육부 「2025년 초중고 사교육비 조사」 · 뉴시스·서울신문 2026. 3. 12.', ask: '이게 정말 고교학점제 때문일까?' },
+  ];
+
+  const PAST = [
+    { y: '1969', short: '중학교 입시를 막자 → 고등학교 입시' },
+    { y: '1974', short: '고등학교 입시를 막자 → 대학 입시·특목고' },
+    { y: '1980', short: '과외를 금지하자 → 불법 과외' },
+  ];
+
+  const BOARD_STEPS = [
+    { k: '우리 정책', t: 120, field: 'policy',
+      main: '두더지가 나온 구멍 하나를 골라, 그 구멍을 막을 정책을 우리 모둠 칸에 한 줄로 적으세요.',
+      ex: '내신 등급을 없애고 성취도(A~E)만 적는다.' },
+    { k: '옆 모둠 반박', t: 120, field: 'counter',
+      main: '다음 번호 모둠의 정책을 읽고, 그 정책을 쓰면 경쟁이 어디로 옮겨 갈지 그 칸에 적으세요.',
+      hint: '내가 수험생이라면, 이 정책을 어떻게 피해 갈까?',
+      cond: '1모둠 칸은 2모둠이, 마지막 모둠 칸은 1모둠이 적습니다. 과거 기록을 근거로 들면 보너스 1점.',
+      ex: '내신 A가 넘쳐서 대학들이 면접을 늘리고, 면접 학원이 생긴다.' },
+    { k: '발표와 투표', t: 180, field: 'reply',
+      main: '‘크게’로 한 모둠씩 띄워 정책과 반박을 읽고, 정책을 낸 모둠이 답합니다. 답은 말로 해도 됩니다.',
+      ex: '면접은 학교 수업에서 배운 내용으로만 묻게 한다.' },
+  ];
+  const FIELD_ORDER = ['policy', 'counter', 'reply'];
+  const FIELD_LABEL = {
+    policy: (g) => `우리 정책 · ${g}모둠`,
+    counter: (g) => `그럼 두더지는 어디로? · ${nextG(g)}모둠이 적기`,
+    reply: (g) => `우리 답변 · ${g}모둠`,
+  };
+  const LIMITS = { policy: 60, counter: 80, reply: 60 };
+
+  const REFLECT_Q = '이 정책을 모두 시행하면, 입시 경쟁은 사라질까?';
+  const CORE_Q = '이만큼 이뤘는데, 60년 동안 입시 경쟁은 왜 사라지지 않았을까?';
+  const STORY = [
+    { k: '#1', t: '수능이 끝난 날 저녁, 불 꺼진 교실' },
+    { k: '#2', t: '명절, 친척이 묻는다. “그래서 대학은 어디 갔니?”' },
+    { k: '#3', t: '자막: 다음 시간, 우리는 왜 ‘좋은 대학’에 가려 할까?' },
+  ];
+
+  const SOURCES = [
+    { t: '정일환 외 9인, 『고등학교 교육의 이해』, 학지사, 2025 (126·130~131쪽)' },
+    { t: '국가기록원, 「기록으로 만나는 대한민국: 중·고교 평준화」', u: 'https://theme.archives.go.kr/next/koreaOfRecord/standard.do' },
+    { t: '국가기록원, 「기록으로 만나는 대한민국: 과외」', u: 'https://theme.archives.go.kr/next/koreaOfRecord/privateLesson.do' },
+    { t: '강창동, 「한국 대학입시제도의 사회사적 변천과 특징에 관한 연구」, 『교육문제연구』 28, 2007, 83–113쪽' },
+    { t: '뉴스토마토, 「조희연 “킬러 문항, 범죄 수사하듯이 다루면 부작용 생겨”」, 2023. 7. 6. (‘두더지 잡기’ 비유)', u: 'https://newstomato.com/ReadNews.aspx?no=1193413' },
+    { t: '서울신문, 「2025년부터 ‘수업 골라 듣는’ 고교학점제…」, 2023. 6. 21.', u: 'https://m.seoul.co.kr/news/2023/06/21/20230621500238' },
+    { t: '뉴시스, 「올해 신입생부터 고교 현장 격변…1등급 4→10%」, 2025. 1. 2.', u: 'https://www.newsis.com/view/NISX20250102_0003019022' },
+    { t: '한국경제(연합뉴스), 「작년 고1 학업중단자 1만명 넘었다…내신 5등급제에도 자퇴 늘어」, 2026. 6. 7.', u: 'https://www.hankyung.com/article/202606071219Y' },
+    { t: '헤럴드경제, 「고교생 1만명 자퇴 러시 5등급제 때문?…강하게 반박한 교육부, 정시도 학생부 본다」, 2026. 7.', u: 'https://www.heraldk.com/article/2026070603403420568' },
+    { t: '매일신문 칼럼, 「5등급제 완화가 부른 변별력 약화…‘수능 최저’와 ‘정시 정성평가’가 합불 가른다」, 2026. 6. 5.', u: 'https://www.imaeil.com/page/view/2026060510411542651' },
+    { t: '메트로신문 칼럼, 「2028학년도 서울대학교 입학전형 분석과 합격 공식」, 2026. 10. 22.', u: 'https://www.metroseoul.co.kr/article/20261022500512' },
+    { t: '뉴시스, 「전체 사교육비 5년만 감소…27.5조원」, 2026. 3. 12.', u: 'https://mobile.newsis.com/view/NISX20260312_0003545284' },
+    { t: '서울신문, 「초중고 사교육 4년만 감소세…참여학생 부담은 더 커져」, 2026. 3. 12.', u: 'https://m.seoul.co.kr/news/2026/03/12/20260312500156' },
+  ];
+
+  const PT = { quiz: 1, bet: 2, vote: 2 };
+
+  /* ── 장면 ─────────────────────────────── */
+  const SCENES = [
+    { id: 'quiz', max: 3, rail: true },
+    { id: 'balance', max: 3 },
+    { id: 'credit', max: 0 },
+    { id: 'bet', max: CARDS.length + 1, rail: true },
+    { id: 'board', max: 2, rail: true },
+    { id: 'reflect', max: 1 },
+    { id: 'finale', max: 1 },
+  ];
+  const IDX = Object.fromEntries(SCENES.map((s, i) => [s.id, i]));
+  const PHASES = [
+    { label: '① 기억력 두더지', from: IDX.quiz, to: IDX.quiz },
+    { label: '② 밸런스 게임', from: IDX.balance, to: IDX.balance },
+    { label: '고교학점제 영상', from: IDX.credit, to: IDX.credit },
+    { label: '③ 두더지 베팅', from: IDX.bet, to: IDX.bet },
+    { label: '④ 정책과 반박', from: IDX.board, to: IDX.board },
+    { label: '⑤ 다시 묻기', from: IDX.reflect, to: IDX.reflect },
+    { label: '점수 · 예고', from: IDX.finale, to: IDX.finale },
+  ];
+
+  /* ── 상태 ─────────────────────────────── */
+  const STORE_KEY = 'dudeoji-game-v3';
+  const MAX_AGE = 4 * 60 * 60 * 1000;
+  const newRoom = () => String(1000 + Math.floor(Math.random() * 9000));
+  const fresh = () => ({
+    scene: 0, beat: 0, groups: 6, max: { scene: 0, beat: 0 },
+    quiz: [{}, {}], bets: {}, cards: {}, started: false,
+    focusG: null, votes: { counter: null, reply: null }, tally: [0, 0], bonus: {}, selected: null,
+    room: newRoom(), voteManual: { counter: false, reply: false },
+  });
+  let state = fresh();
+  let lastNav = 'none';
+  const reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  const $ = (id) => document.getElementById(id);
+  const main = $('main'), stage = $('stage'), rail = $('rail');
+  const phasesEl = $('phases'), nextBtn = $('next'), prevBtn = $('prev'), hintEl = $('hint');
+  const overlay = $('sources'), srcList = $('srcList'), srcClose = $('srcClose');
+  const timerEl = $('timer'), tDisplay = $('tDisplay'), tPlay = $('tPlay'), tReset = $('tReset'), fsBtn = $('fs');
+
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const gids = () => Array.from({ length: state.groups }, (_, i) => String(i + 1));
+  const nextG = (g) => String((Number(g) % state.groups) + 1);
+  const sceneId = () => SCENES[state.scene].id;
+  const fx = () => lastNav === 'next' || lastNav === 'scene';
+  const enterCls = () => (fx() ? ' enter' : '');
+  const card = (g) => state.cards[g] || (state.cards[g] = { policy: '', counter: '', reply: '' });
+  const reached = (si, b) => state.max.scene > si || (state.max.scene === si && state.max.beat >= b);
+
+  function betShown() {
+    if (state.scene === IDX.bet) return Math.min(state.beat, CARDS.length);
+    return state.scene > IDX.bet ? CARDS.length : 0;
+  }
+  function betShownMax() {
+    if (state.max.scene > IDX.bet) return CARDS.length;
+    if (state.max.scene === IDX.bet) return Math.min(state.max.beat, CARDS.length);
+    return 0;
+  }
+  function moleStatus(k) {
+    const st = Array(HOLES5.length).fill(null);
+    CARDS.slice(0, k).forEach((c) => c.holes.forEach((h) => { st[h] = c.effect; }));
+    return st;
+  }
+
+  function scores() {
+    const out = {};
+    gids().forEach((g) => { out[g] = { quiz: 0, bet: 0, cast: 0, bonus: Number(state.bonus[g]) || 0 }; });
+    QUIZ.forEach((q, qi) => {
+      if (!reached(IDX.quiz, qi * 2 + 1)) return;
+      gids().forEach((g) => { if (state.quiz[qi][g] === q.answer) out[g].quiz += PT.quiz; });
+    });
+    const st = moleStatus(betShownMax());
+    gids().forEach((g) => {
+      const h = state.bets[g];
+      if (h != null && h < OUT && st[h] === 'pop') out[g].bet += PT.bet;
+    });
+    if (state.votes.counter && out[nextG(state.votes.counter)]) out[nextG(state.votes.counter)].cast += PT.vote;
+    if (state.votes.reply && out[state.votes.reply]) out[state.votes.reply].cast += PT.vote;
+    gids().forEach((g) => { const o = out[g]; o.total = o.quiz + o.bet + o.cast + o.bonus; });
+    return out;
+  }
+
+  /* ── 그림 조각 ─────────────────────────── */
+  const MOLE = `
+    <path class="m-body" d="M58 132V84a42 42 0 0 1 84 0v48z"/>
+    <ellipse class="m-face" cx="100" cy="96" rx="26" ry="18"/>
+    <circle class="m-eye" cx="85" cy="74" r="5"/>
+    <circle class="m-eye" cx="115" cy="74" r="5"/>
+    <circle class="m-shine" cx="86.8" cy="72.2" r="1.7"/>
+    <circle class="m-shine" cx="116.8" cy="72.2" r="1.7"/>
+    <ellipse class="m-nose" cx="100" cy="88" rx="9" ry="6.5"/>
+    <rect class="m-tooth" x="95" y="99" width="4.6" height="7" rx="1.2"/>
+    <rect class="m-tooth" x="100.4" y="99" width="4.6" height="7" rx="1.2"/>
+    <ellipse class="m-paw" cx="70" cy="118" rx="12" ry="7.5"/>
+    <ellipse class="m-paw" cx="130" cy="118" rx="12" ry="7.5"/>`;
+  const QMARK = '<g class="qmark"><circle cx="154" cy="46" r="21"/><text x="154" y="56.5" text-anchor="middle">?</text></g>';
+  let clipSeq = 0;
+  function holeSVG(o) {
+    const id = 'hc' + (++clipSeq);
+    const show = o.up || o.doubt || o.loop;
+    const pop = o.loop ? 'loop' : (o.pop || 'old');
+    return `<svg class="hole-svg" viewBox="0 0 200 140" aria-hidden="true" focusable="false">
+      <defs><clipPath id="${id}"><path d="M0 0H200V104H182A82 24 0 0 1 18 104H0Z"/></clipPath></defs>
+      <ellipse class="pit" cx="100" cy="104" rx="82" ry="24"/>
+      <ellipse class="pit-in" cx="100" cy="108" rx="64" ry="14"/>
+      ${show ? `<g clip-path="url(#${id})"><g class="mole-g${o.doubt ? ' doubt' : ''}" data-pop="${pop}">${MOLE}${o.doubt ? QMARK : ''}</g></g>` : ''}
+      <path class="rim" d="M18 104A82 24 0 0 0 182 104"/>
+    </svg>`;
+  }
+
+  function token(g, cls) {
+    return `<span class="token${cls ? ' ' + cls : ''}" style="--gc: var(--g${g})" aria-hidden="true">${g}</span>`;
+  }
+
+  function holeBtn(o) {
+    const status = o.doubt ? ', 물음표 두더지' : o.up ? ', 두더지' : '';
+    const who = o.tokens.length ? `, ${o.tokens.join('·')}모둠` : '';
+    return `<button type="button" class="hole${state.selected ? ' target' : ''}" data-hole="${o.h}" aria-label="${o.num} ${o.name}${status}${who}">
+      <span class="hole-art">${holeSVG(o)}${o.whack ? `<span class="kwang${fx() ? ' pop-in' : ''}" aria-hidden="true">쾅!</span>` : ''}${o.blocked ? `<span class="blocked">${o.blocked}</span>` : ''}</span>
+      <span class="hole-label"><span class="hole-num">${o.num}</span><span class="hole-name">${o.name}</span></span>
+      ${o.chalk ? `<span class="hole-chalk">${o.chalk}</span>` : ''}
+      ${o.whackLabel ? `<span class="whack-label">${o.whackLabel}</span>` : ''}
+      <span class="hole-tokens">${o.tokens.map((g) => token(g, 'xs')).join('')}</span>
+    </button>`;
+  }
+
+  function tray(isPlaced, where) {
+    const sel = state.selected;
+    return `<div class="tray">
+      <span class="tray-k">모둠 자석</span>
+      <div class="tray-tokens">${gids().map((g) => {
+        const placed = isPlaced(g);
+        return `<button type="button" class="token-btn${placed ? ' placed' : ''}${sel === g ? ' selected' : ''}" data-token="${g}" style="--gc: var(--g${g})" aria-pressed="${sel === g}" aria-label="${g}모둠 자석${placed ? `, ${where(g)}` : ''}">${g}</button>`;
+      }).join('')}</div>
+      ${sel && isPlaced(sel) ? `<button type="button" class="btn-chalk sm" data-action="unplace">${sel}모둠 자석 떼기</button>` : ''}
+      <span class="tray-help">${sel ? `${sel}모둠 자석을 붙일 구멍을 누르세요` : '모둠 자석을 누른 다음, 구멍을 누르세요'}</span>
+    </div>`;
+  }
+
+  function record(r, extra) {
+    return `<article class="rec${extra || ''}">
+      <h3 class="rec-lead">${r.lead}</h3>
+      ${r.text ? `<p class="rec-text">${r.text}</p>` : ''}
+      ${r.quote ? `<blockquote class="rec-quote">${r.quote}</blockquote>` : ''}
+      ${r.bars ? BARS : ''}
+      ${r.src ? `<p class="rec-src">${r.src}</p>` : ''}
+    </article>`;
+  }
+
+  /* 영상 칸: 영상 요소는 다시 그려도 끊기지 않게 한 번만 만든다 */
+  const videos = {}, videoUrl = {}, videoName = {};
+  function videoEl(k) {
+    if (!videos[k]) {
+      const v = document.createElement('video');
+      v.controls = true; v.playsInline = true; v.preload = 'metadata';
+      videos[k] = v;
+    }
+    return videos[k];
+  }
+  function videoSlot(k, title) {
+    const has = !!videoUrl[k];
+    return `<div class="video-col">
+      <div class="video-frame${has ? ' has' : ''}" id="slot-${k}">
+        ${has ? '<div class="vid-mount"></div>' : `<div class="vid-empty"><p class="vid-empty-t">${title}</p><button type="button" class="btn-chalk" data-action="pick" data-k="${k}">영상 파일 열기</button><p class="vid-empty-s">컴퓨터에 있는 영상 파일을 고르세요. 새로고침하면 다시 열어야 합니다.</p></div>`}
+      </div>
+      <input type="file" id="file-${k}" accept="video/*" hidden>
+      ${has ? `<p class="vid-file">${esc(videoName[k])} · <button type="button" class="link-btn" data-action="pick" data-k="${k}">다른 파일</button></p>` : ''}
+    </div>`;
+  }
+  function mountVideos() {
+    ['credit', 'teaser'].forEach((k) => {
+      const slot = main.querySelector(`#slot-${k} .vid-mount`);
+      if (slot && videoUrl[k]) slot.appendChild(videoEl(k));
+    });
+  }
+
+  /* ── 장면 화면 ─────────────────────────── */
+  const VIEWS = {
+    quiz() {
+      const qi = state.beat >> 1, rev = state.beat % 2 === 1, Q = QUIZ[qi];
+      const board = `<div class="board b3">${HOLES3.map((H, h) => {
+        let blocked = '';
+        if (h === 0 && (qi === 1 || rev)) blocked = '1969 막음';
+        if (h === 1 && qi === 1 && rev) blocked = '1974 막음';
+        const up = rev && h === Q.answer;
+        const whack = !rev && h === Q.hit;
+        return holeBtn({
+          h, num: NUMS[h], name: H.name, chalk: H.chalk, up, pop: up && lastNav === 'next' ? 'new' : 'old',
+          whack, whackLabel: whack ? Q.whack : '', blocked,
+          tokens: gids().filter((g) => state.quiz[qi][g] === h),
+        });
+      }).join('')}</div>`;
+      const entered = gids().filter((g) => state.quiz[qi][g] != null).length;
+      let side;
+      if (!rev) {
+        side = `<article class="paper ask-card">
+            <p class="q-k">${LIVE.cfg ? '모둠 폰에서 구멍을 고르세요' : '모둠 번호 카드를 드세요'}</p>
+            <div class="ask-opts">${HOLES3.map((H, h) => `<p><span>${NUMS[h]}</span>${H.name}</p>`).join('')}</div>
+            <p class="q-note">입력한 모둠 ${entered} / ${state.groups} · 맞히면 ${PT.quiz}점</p>
+          </article>
+          <p class="chalk-ask sm">영상에서 본 장면을 떠올리세요.</p>`;
+      } else {
+        const right = gids().filter((g) => state.quiz[qi][g] === Q.answer);
+        side = `<p class="result-line${enterCls()}">정답 ${NUMS[Q.answer]} ${HOLES3[Q.answer].name} <span>맞힌 모둠 <b>${right.length ? right.join(', ') : '없음'}</b></span>${right.length ? `<span class="pt">+${PT.quiz}점</span>` : ''}</p>
+          <div class="records">${Q.records.map((r) => record(r, enterCls())).join('')}</div>`;
+      }
+      return `<section class="quiz">
+        <header class="scene-head"><p class="eyebrow">① 기억력 두더지 · 문제 ${qi + 1} / ${QUIZ.length}</p><h2 class="scene-title">${Q.ask} <span class="t2">${Q.ask2}</span></h2></header>
+        <div class="quiz-grid">
+          <div class="board-zone">
+            ${board}
+            ${tray((g) => state.quiz[qi][g] != null, (g) => `${NUMS[state.quiz[qi][g]]} ${HOLES3[state.quiz[qi][g]].name}`)}
+            ${qi === 1 && rev ? `<p class="chalk-ask${enterCls()}">두 번 모두, 막으면 옆에서 튀어나왔다.</p>` : ''}
+          </div>
+          <div class="side-col">${side}</div>
+        </div>
+      </section>`;
+    },
+    balance() {
+      const b = state.beat;
+      if (b >= BALANCE.length) {
+        return `<section class="balance">
+          <header class="scene-head"><p class="eyebrow">② 밸런스 게임 · 정리</p><h2 class="scene-title">고른 이유를 떠올려 보세요</h2></header>
+          <ul class="bal-sum">${BALANCE.map((q) => `<li><span>${q[0]}</span><i>vs</i><span>${q[1]}</span></li>`).join('')}</ul>
+          <p class="link-line${enterCls()}">방금 여러분이 고른 이유가,<br><mark>2025년 두더지가 튀어나올 구멍</mark>입니다.</p>
+        </section>`;
+      }
+      const q = BALANCE[b];
+      return `<section class="balance">
+        <header class="scene-head"><p class="eyebrow">② 밸런스 게임 · ${b + 1} / ${BALANCE.length}</p><h2 class="scene-title">${LIVE.cfg ? '둘 중 하나, 폰으로 고르세요' : '둘 중 하나, 교실 왼쪽과 오른쪽으로'}</h2></header>
+        <div class="vs${enterCls()}">
+          <div class="side left"><p class="side-k">← 왼쪽</p><p class="side-t">${q[0]}</p></div>
+          <span class="vs-mark" aria-hidden="true">VS</span>
+          <div class="side right"><p class="side-k">오른쪽 →</p><p class="side-t">${q[1]}</p></div>
+        </div>
+        <p class="chalk-ask">왜 그쪽을 골랐나요?</p>
+      </section>`;
+    },
+    credit() {
+      const link = typeof window.DUDEOJI_CREDIT_VIDEO === 'string' ? window.DUDEOJI_CREDIT_VIDEO.trim() : '';
+      return `<section class="video-scene">
+        <header class="scene-head"><p class="eyebrow">2025 고교학점제 · 영상</p><h2 class="scene-title">여러분이 고1이 된 2025년, <span class="t2">무엇이 바뀌었나?</span></h2></header>
+        <div class="video-grid">
+          ${videoSlot('credit', '고교학점제 영상')}
+          <div class="side-col">
+            <ol class="chapters rules-ch" aria-label="2025년 고1부터 바뀐 규칙">${RULES25.map((r) => `<li><span class="ch-year">${r[0]}</span><span class="ch-t">${r[1]}</span></li>`).join('')}</ol>
+            <p class="fineprint">${RULES25_SRC}</p>
+            ${/^https:\/\//.test(link) ? `<p><a class="btn-chalk sm" href="${esc(link)}" target="_blank" rel="noopener">영상 링크 열기 ↗</a></p>` : ''}
+          </div>
+        </div>
+        <p class="chalk-ask sm">바뀐 규칙에서, 두더지는 어디로 튀어나올까?</p>
+      </section>`;
+    },
+    bet() {
+      const k = betShown(), st = moleStatus(k);
+      const fresh = k > 0 && state.beat <= CARDS.length && lastNav === 'next' ? CARDS[k - 1].holes : [];
+      const board = `<div class="board b5">${HOLES5.map((name, h) => holeBtn({
+          h, num: NUMS[h], name, up: st[h] === 'pop', doubt: st[h] === 'doubt',
+          pop: fresh.includes(h) ? 'new' : 'old',
+          tokens: gids().filter((g) => state.bets[g] === h),
+        })).join('')}
+        <button type="button" class="hole out${state.selected ? ' target' : ''}" data-hole="${OUT}" aria-label="판 밖, 안 나온다(경쟁이 줄어든다)${gids().filter((g) => state.bets[g] === OUT).length ? `, ${gids().filter((g) => state.bets[g] === OUT).join('·')}모둠` : ''}">
+          <span class="out-k">판 밖</span><span class="out-name">안 나온다</span><span class="out-sub">경쟁이 줄어든다</span>
+          <span class="hole-tokens">${gids().filter((g) => state.bets[g] === OUT).map((g) => token(g, 'xs')).join('')}</span>
+        </button>
+      </div>`;
+      const where = (g) => (state.bets[g] === OUT ? '안 나온다' : HOLES5[state.bets[g]]);
+      let side, title;
+      if (state.beat === 0) {
+        title = '2025년, 두더지는 어디서 나올까?';
+        const n = gids().filter((g) => state.bets[g] != null).length;
+        side = `<article class="paper rules25">
+            <p class="q-k">2025년 고1부터 바뀐 규칙</p>
+            <dl class="rules-dl">${RULES25.map((r) => `<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>
+            <p class="rec-src">${RULES25_SRC}</p>
+          </article>
+          <p class="chalk-ask sm">모둠 자석 하나. 근거 하나를 말할 수 있어야 합니다.</p>
+          <p class="fineprint">자석을 건 모둠 ${n} / ${state.groups} · 두더지가 나온 구멍에 건 모둠 ${PT.bet}점</p>`;
+      } else if (state.beat <= CARDS.length) {
+        const c = CARDS[k - 1];
+        title = `카드 ${k} / ${CARDS.length}`;
+        const tag = (cc) => `<span class="nc-tag${cc.effect === 'doubt' ? ' doubt' : ''}">${cc.effect === 'doubt' ? '?' : '두더지'} · ${cc.holes.map((h) => HOLES5[h]).join(', ')}</span>`;
+        side = `<article class="paper ncard${c.counter ? ' counter' : ''}${enterCls()}">
+            <p class="nc-k">${c.kicker} ${tag(c)}</p>
+            <h3 class="nc-head">${c.head}</h3>
+            ${c.split ? `<div class="nc-split"><ul class="down"><li class="k">줄었다</li>${c.split.down.map((x) => `<li>${x}</li>`).join('')}</ul><ul class="up"><li class="k">늘었다</li>${c.split.up.map((x) => `<li>${x}</li>`).join('')}</ul></div>` : ''}
+            <p class="nc-text">${c.text}</p>
+            <p class="rec-src">${c.src}</p>
+            ${c.ask ? `<p class="nc-ask">${c.ask}</p>` : ''}
+          </article>
+          ${k < CARDS.length ? `<button type="button" class="cardback" data-reveal="1">다음 카드<span>눌러서 공개</span></button>` : ''}
+          ${k > 1 ? `<ol class="nc-older" aria-label="앞서 공개한 카드">${CARDS.slice(0, k - 1).reverse().map((cc) => `<li>${cc.kicker} · ${cc.head} ${tag(cc)}</li>`).join('')}</ol>` : ''}`;
+      } else {
+        title = '베팅 결과';
+        side = `<article class="paper sum${enterCls()}">
+            <p class="q-k">어디에 걸었고, 두더지는 나왔나</p>
+            <table class="sum-table">
+              <thead><tr><th scope="col">모둠</th><th scope="col">건 곳</th><th scope="col">결과</th></tr></thead>
+              <tbody>${gids().map((g) => {
+                const h = state.bets[g];
+                let res = '—';
+                if (h === OUT) res = '근거 보너스 가능';
+                else if (h != null) res = st[h] === 'pop' ? `<span class="plus">+${PT.bet}</span>` : st[h] === 'doubt' ? '? · 근거 보너스 가능' : '0';
+                return `<tr><td><span class="g">${token(g, 'xs')}${g}모둠</span></td><td>${h == null ? '안 걸었음' : where(g)}</td><td>${res}</td></tr>`;
+              }).join('')}</tbody>
+            </table>
+            <p class="q-note">‘?’ 구멍이나 ‘안 나온다’에 건 모둠은 근거가 좋으면 점수판에서 +1을 누르세요.</p>
+          </article>`;
+      }
+      return `<section class="bet">
+        <header class="scene-head"><p class="eyebrow">③ 2025 두더지 베팅</p><h2 class="scene-title">${title}</h2></header>
+        <div class="bet-grid">
+          <div class="board-zone">
+            ${board}
+            ${state.beat === 0 ? tray((g) => state.bets[g] != null, where) : ''}
+          </div>
+          <div class="side-col">${side}</div>
+        </div>
+      </section>`;
+    },
+    board() {
+      const b = state.beat, S = BOARD_STEPS[b];
+      const st = moleStatus(betShown());
+      const pops = HOLES5.filter((_, i) => st[i] === 'pop'), doubts = HOLES5.filter((_, i) => st[i] === 'doubt');
+      const top = `<div class="bd-top">
+          <header class="scene-head"><p class="eyebrow">④ 정책과 반박 · 7분</p><h2 class="scene-title">${S.k}</h2></header>
+          <ol class="steps" aria-label="④ 순서">${BOARD_STEPS.map((x, i) => `<li class="step${i === b ? ' now' : i < b ? ' done' : ''}"${i === b ? ' aria-current="step"' : ''}>${x.k}<b>${fmt(x.t)}</b></li>`).join('')}</ol>
+        </div>`;
+      const task = `<div class="paper bd-task${enterCls()}"><p class="bd-main">${S.main}</p><p class="bd-ex"><b>예시</b>${S.ex}</p></div>`;
+      const sub = S.hint || S.cond ? `<div class="bd-sub">${S.hint ? `<p class="bd-hint">${S.hint}</p>` : ''}${S.cond ? `<p class="bd-cond">${S.cond}</p>` : ''}</div>` : '';
+      const dot = '<span aria-hidden="true">·</span>';
+      const log = b < 2 ? `<p class="mole-log"><span class="ml-k">두더지 기록</span>${PAST.map((p) => `<span><b>${p.y}</b> ${p.short}</span>`).join(dot)}${dot}<span class="ours"><b>2025 우리 반</b> ${pops.length ? pops.join(', ') : '아직 없음'}${doubts.length ? ` · ? ${doubts.join(', ')}` : ''}</span></p>` : '';
+      const upto = FIELD_ORDER.indexOf(S.field);
+      const box = (g, big) => {
+        const c = card(g);
+        const parts = FIELD_ORDER.slice(0, upto + 1).map((f) => {
+          const label = FIELD_LABEL[f](g);
+          if (f === S.field) {
+            return `<label class="bx-k on" for="bx-${g}-${f}">${label}</label><textarea class="bx-in" id="bx-${g}-${f}" data-g="${g}" data-f="${f}" rows="2" maxlength="${LIMITS[f]}" placeholder="${f === 'reply' ? '말로 답해도 됩니다' : '여기에 적기'}">${esc(c[f])}</textarea>`;
+          }
+          return `<p class="bx-k">${label}</p><p class="bx-t">${c[f] ? esc(c[f]) : '<span class="bx-empty">비어 있음</span>'}</p>`;
+        }).join('');
+        return `<article class="bx${big ? ' big' : ''}" aria-label="${g}모둠 칸">
+            <div class="bx-head">${token(g)}<b>${g}모둠</b>${big ? '' : `<button type="button" class="link-btn" data-focus="${g}">크게</button>`}</div>
+            ${parts}
+          </article>`;
+      };
+      const body = state.focusG
+        ? `<div class="focus-tabs" role="group" aria-label="크게 볼 모둠">${gids().map((g) => `<button type="button" class="focus-tab" data-focus="${g}" aria-pressed="${g === state.focusG}">${g}모둠</button>`).join('')}<button type="button" class="link-btn" data-focus="all">모두 보기</button></div>${box(state.focusG, true)}`
+        : `<div class="bd-grid${state.groups === 4 ? ' g4' : ''}">${gids().map((g) => box(g)).join('')}</div>`;
+      const vcount = { counter: voteCounts('counter'), reply: voteCounts('reply') };
+      const voteRow = (kind) => `<div class="vote-row">${gids().map((x) => {
+        const n = vcount[kind][x];
+        return `<button type="button" class="vote-btn" data-vote="${kind}:${x}" style="--gc: var(--g${x})" aria-pressed="${state.votes[kind] === x}" aria-label="${x}모둠 칸${n ? `, 폰 ${n}표` : ''}">${x}${n ? `<i class="vote-n" aria-hidden="true">${n}</i>` : ''}</button>`;
+      }).join('')}</div>`;
+      const vc = state.votes.counter, vr = state.votes.reply;
+      const follow = (kind) => `<button type="button" class="link-btn" data-action="vote-auto" data-kind="${kind}">폰 투표 따르기</button>`;
+      const voteNote = (kind, sel, won, empty) => {
+        const manual = LIVE.cfg && state.voteManual[kind];
+        if (sel) return `${won}${vcount[kind][sel] ? ` · 폰 ${vcount[kind][sel]}표` : ''}${manual ? ` · 직접 고름 ${follow(kind)}` : ''}`;
+        if (manual) return `직접 비움 ${follow(kind)}`;
+        const tops = voteTops(kind);
+        if (LIVE.cfg && tops.length > 1) return `동점: ${tops.join('·')}모둠 칸. 하나를 눌러 고르세요.`;
+        return LIVE.cfg ? '폰으로 투표하세요. 가장 많이 받은 칸이 자동으로 뽑힙니다.' : empty;
+      };
+      const votes = b === 2 ? `<div class="votes-row">
+          <div class="vote-group"><p class="vote-k">가장 날카로운 반박</p>${voteRow('counter')}<p class="vote-res">${voteNote('counter', vc, vc ? `${vc}모둠 칸 · 반박을 쓴 <b>${nextG(vc)}모둠 +${PT.vote}</b>` : '', '모둠 번호 카드로 뽑으세요. 자기 모둠이 쓴 반박에는 투표하지 않습니다.')}</p></div>
+          <div class="vote-group"><p class="vote-k">가장 설득력 있는 답변</p>${voteRow('reply')}<p class="vote-res">${voteNote('reply', vr, vr ? `${vr}모둠 칸 · 답한 <b>${vr}모둠 +${PT.vote}</b>` : '', '자기 모둠 칸에는 투표하지 않습니다.')}</p></div>
+        </div>` : '';
+      return `<section class="board-scene">${top}${task}${sub}${log}${votes}${body}</section>`;
+    },
+    reflect() {
+      if (state.beat === 1) {
+        return `<section class="reflect">
+          <header class="scene-head"><p class="eyebrow">⑤ 다시 묻기 · 점수 없음</p><h2 class="scene-title">처음 질문에 다시 답해 봅시다</h2></header>
+          <p class="again-q${enterCls()}">${CORE_Q}</p>
+          <p class="chalk-ask sm">처음 생각과 무엇이 달라졌나요? 한두 명이 말해 봅시다.</p>
+        </section>`;
+      }
+      const lt = liveTally(), yes = state.tally[0] + lt[0], no = state.tally[1] + lt[1];
+      const wall = gids().map((g) => {
+        const c = state.cards[g] || {};
+        return `<article class="pw">${token(g, 'xs')}<div class="pw-body"><p class="pw-t">${c.policy ? esc(c.policy) : `<span class="bx-empty">${g}모둠 정책</span>`}</p>${c.counter ? `<p class="pw-c">반박 · ${esc(c.counter)}</p>` : ''}</div></article>`;
+      }).join('');
+      const tallyBox = (side, label, v) => `<div class="tally-box"><span class="tally-k">${label}</span><div class="counter">
+          <button type="button" data-tally="${side}:-1" aria-label="${label} 1명 빼기">−</button><b aria-live="polite">${v}</b><span>명${phoneN(lt[side])}</span>
+          <button type="button" data-tally="${side}:1" aria-label="${label} 1명 더하기">+</button></div></div>`;
+      return `<section class="reflect">
+        <header class="scene-head"><p class="eyebrow">⑤ 다시 묻기 · 점수 없음</p><h2 class="scene-title">${REFLECT_Q}</h2></header>
+        <div class="pwall${state.groups === 4 ? ' g4' : ''}">${wall}</div>
+        <div class="tally">${tallyBox(0, '사라진다', yes)}${tallyBox(1, '그래도 남는다', no)}</div>
+        <p class="chalk-ask sm">${LIVE.cfg ? '폰으로 답하고, 한두 명이 이유를 말해 봅시다.' : '손을 들어 답하고, 한두 명이 이유를 말해 봅시다.'}</p>
+      </section>`;
+    },
+    finale() {
+      if (state.beat === 1) {
+        return `<section class="finale">
+          <header class="scene-head"><p class="eyebrow">다음 화 예고</p><h2 class="scene-title">우리는 왜 ‘좋은 대학’에 가려 할까?</h2></header>
+          <div class="teaser-grid">
+            ${videoSlot('teaser', '예고 영상')}
+            <ol class="storyboard" aria-label="예고 영상 장면">${STORY.map((s) => `<li class="sb"><span class="sb-k">${s.k}</span><span>${s.t}</span></li>`).join('')}</ol>
+          </div>
+          <p class="next-line">다음 시간 · 교과서 131쪽, 학력·학벌주의 <button type="button" class="btn-chalk sm" data-open-sources>자료 출처</button></p>
+        </section>`;
+      }
+      const S = scores();
+      const order = gids().slice().sort((a, b) => S[b].total - S[a].total || Number(a) - Number(b));
+      const top = Math.max(0, ...order.map((g) => S[g].total));
+      const winners = top > 0 ? order.filter((g) => S[g].total === top) : [];
+      const title = winners.length ? `${winners.map((g) => g + '모둠').join(', ')} ${winners.length > 1 ? '공동 우승' : '우승'}` : '아직 점수가 없습니다';
+      return `<section class="finale">
+        <header class="scene-head"><p class="eyebrow">최종 점수</p><h2 class="scene-title">${title}</h2></header>
+        <ol class="rank">${order.map((g, i) => {
+          const s = S[g], win = winners.includes(g);
+          return `<li class="rank-row${win ? ' win' : ''}">
+            <span class="rank-n">${i + 1}</span>${token(g)}<span class="rank-name">${g}모둠</span>
+            <span class="rank-bar"><i style="width:${top > 0 ? Math.max(0, s.total) / top * 100 : 0}%"></i></span>
+            <span class="rank-total">${s.total}</span>
+            <span class="rank-break">퀴즈 ${s.quiz} · 베팅 ${s.bet} · 반박·답변 ${s.cast} · 보너스 ${s.bonus}</span>
+            ${win ? '<span class="seal">우승</span>' : ''}
+          </li>`;
+        }).join('')}</ol>
+        <p class="fineprint">게임 점수는 수업 평가에 넣지 않습니다.</p>
+      </section>`;
+    },
+  };
+
+  function autosize(el) {
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight + 4) + 'px';
+  }
+
+  /* ── 진행 표시 ─────────────────────────── */
+  function nextLabel() {
+    const id = sceneId(), b = state.beat;
+    switch (id) {
+      case 'quiz': return ['정답 공개', '문제 2', '정답 공개', '밸런스 게임'][b];
+      case 'balance': return b < BALANCE.length - 1 ? '다음 질문' : b < BALANCE.length ? '연결' : '고교학점제 영상';
+      case 'credit': return '두더지 베팅';
+      case 'bet': return b === 0 ? '뉴스 카드 공개' : b < CARDS.length ? '다음 카드' : b === CARDS.length ? '베팅 결과' : '정책과 반박';
+      case 'board': return b < BOARD_STEPS.length - 1 ? BOARD_STEPS[b + 1].k : '다시 묻기';
+      case 'reflect': return ['다시 답하기', '최종 점수'][b];
+      case 'finale': return b === 0 ? '다음 화 예고' : '끝';
+      default: return '다음';
+    }
+  }
+  function hintText() {
+    if (LIVE.cfg) { const h = liveHint(); if (h) return h; }
+    const id = sceneId(), b = state.beat;
+    switch (id) {
+      case 'quiz': return b % 2 === 0 ? '모둠 자석을 누른 다음, 그 모둠이 든 번호의 구멍을 누르세요. 타이머 0:30.' : `맞힌 모둠은 ${PT.quiz}점. 기록을 함께 읽으세요.`;
+      case 'balance': return b < BALANCE.length ? '둘 중 하나를 고르게 하고, 한두 명에게 이유를 물으세요. 인원은 세지 않습니다.' : '이 문장으로 고교학점제 영상과 잇습니다.';
+      case 'credit': return '영상 파일을 열어 트세요. 끝나면 오른쪽의 바뀐 규칙 세 가지를 짚고 베팅으로 넘어갑니다.';
+      case 'bet':
+        if (b === 0) return '모둠 자석을 누른 다음 구멍을 누르세요. 판 밖은 ‘안 나온다’입니다. 타이머 1:30.';
+        if (b <= CARDS.length) return CARDS[b - 1].ask ? '카드의 질문을 30초 동안 따지게 하세요.' : `카드를 읽고 다음 카드로. 두더지가 나온 구멍에 건 모둠은 ${PT.bet}점.`;
+        return '‘?’와 ‘안 나온다’에 건 모둠은 근거가 좋으면 점수판에서 +1.';
+      case 'board': return ['모둠 대표가 자기 칸에 정책을 적습니다. 모둠이 말한 것을 보조 교사가 받아 적어도 됩니다. 타이머 2:00.', '각 칸의 반박은 다음 번호 모둠이 적습니다. 타이머 2:00.', '‘크게’를 눌러 한 모둠씩 띄우고, 답을 들은 뒤 투표하세요. 타이머 3:00.'][b];
+      case 'reflect': return ['손을 들게 해 양쪽 인원을 세어도 되고, 건너뛰어도 됩니다. 한두 명에게 이유를 물으세요.', '처음 질문을 다시 묻고, 한두 명이 처음 생각과 달라진 점을 말하게 하세요.'][b];
+      case 'finale': return b === 0 ? '우승 모둠을 발표하세요.' : '예고 영상을 틀고 인사로 마칩니다.';
+      default: return '';
+    }
+  }
+  let hintTimer = 0;
+  function flashHint(msg) {
+    hintEl.textContent = msg;
+    hintEl.classList.add('flash');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => { hintEl.classList.remove('flash'); hintEl.textContent = hintText(); }, 2600);
+  }
+  function updateChrome() {
+    const atEnd = state.scene === SCENES.length - 1 && state.beat >= SCENES[state.scene].max;
+    phasesEl.innerHTML = PHASES.map((p, k) => {
+      const cur = state.scene >= p.from && state.scene <= p.to;
+      const done = state.scene > p.to;
+      return `<button type="button" class="phase${done ? ' done' : ''}" data-phase="${k}"${cur ? ' aria-current="step"' : ''}>${p.label}</button>`;
+    }).join('');
+    const cur = phasesEl.querySelector('[aria-current]');
+    if (cur && phasesEl.scrollWidth > phasesEl.clientWidth) {
+      phasesEl.scrollLeft = Math.max(0, cur.offsetLeft - phasesEl.clientWidth / 2 + cur.offsetWidth / 2);
+    }
+    nextBtn.textContent = nextLabel() + (atEnd ? '' : ' →');
+    nextBtn.disabled = atEnd;
+    prevBtn.disabled = state.scene === 0 && state.beat === 0;
+    if (!hintEl.classList.contains('flash')) hintEl.textContent = hintText();
+  }
+
+  /* ── 점수판 ─────────────────────────────── */
+  const lastTotals = {};
+  function renderRail() {
+    if (rail.hidden) return;
+    const S = scores();
+    const top = Math.max(0, ...gids().map((g) => S[g].total));
+    rail.innerHTML = `<p class="rail-head">점수판</p>
+      <ol class="score-list">${gids().map((g) => {
+        const t = S[g].total;
+        const bump = lastTotals[g] !== undefined && lastTotals[g] !== t;
+        lastTotals[g] = t;
+        return `<li class="score-row${top > 0 && t === top ? ' lead' : ''}">${token(g)}<span class="score-name">${g}모둠</span><b class="score-num${bump && !reduced ? ' bump' : ''}">${t}</b>
+          <span class="score-adj"><button type="button" data-bonus="${g}:1" aria-label="${g}모둠 보너스 1점">+1</button><button type="button" data-bonus="${g}:-1" aria-label="${g}모둠 1점 빼기">−1</button></span></li>`;
+      }).join('')}</ol>
+      <p class="rail-cap">근거가 좋으면 +1</p>`;
+  }
+
+  /* ── 그리기 ─────────────────────────────── */
+  function render() {
+    const sc = SCENES[state.scene];
+    const ae = document.activeElement;
+    const keep = ae && ae.classList && ae.classList.contains('bx-in') && main.contains(ae) ? { id: ae.id, s: ae.selectionStart, e: ae.selectionEnd } : null;
+    rail.hidden = !sc.rail;
+    stage.classList.toggle('no-rail', !sc.rail);
+    clipSeq = 0;
+    main.innerHTML = VIEWS[sc.id]();
+    mountVideos();
+    main.querySelectorAll('.bx-in').forEach(autosize);
+    if (keep) {
+      const el = $(keep.id);
+      if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(keep.s, keep.e); } catch (err) { /* */ } }
+    }
+    const anim = lastNav === 'next' && !reduced;
+    main.querySelectorAll('.mole-g').forEach((m) => {
+      if (m.dataset.pop === 'loop') return;
+      if (m.dataset.pop === 'new' && anim) requestAnimationFrame(() => requestAnimationFrame(() => m.classList.add('up')));
+      else m.classList.add('instant', 'up');
+    });
+    updateChrome();
+    renderRail();
+    if (lastNav === 'scene') main.scrollTop = 0;
+    else if (lastNav === 'next') {
+      const el = main.querySelector('.enter');
+      if (el) el.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+    }
+    save();
+    publishAct();
+    drawLive();
+  }
+
+  function timerFor(id, b) {
+    switch (id) {
+      case 'quiz': return b % 2 === 0 ? 30 : null;
+      case 'bet': return b === 0 ? 90 : (CARDS[b - 1] && CARDS[b - 1].ask ? 30 : null);
+      case 'board': return BOARD_STEPS[b] ? BOARD_STEPS[b].t : null;
+      default: return null;
+    }
+  }
+  function onBeat() {
+    state.selected = null;
+    if (sceneId() !== 'board') state.focusG = null;
+    const t = timerFor(sceneId(), state.beat);
+    if (t && !timer.running) setTimer(t);
+  }
+  function bumpMax() {
+    const m = state.max;
+    if (state.scene > m.scene || (state.scene === m.scene && state.beat > m.beat)) state.max = { scene: state.scene, beat: state.beat };
+  }
+  function next() {
+    LIVE.hold = Date.now() + 700;
+    const sc = SCENES[state.scene];
+    if (state.beat < sc.max) { state.beat += 1; lastNav = 'next'; }
+    else if (state.scene < SCENES.length - 1) { state.scene += 1; state.beat = 0; lastNav = 'scene'; }
+    else return;
+    bumpMax(); onBeat(); render();
+  }
+  function prev() {
+    LIVE.hold = Date.now() + 700;
+    if (state.beat > 0) { state.beat -= 1; lastNav = 'prev'; }
+    else if (state.scene > 0) { state.scene -= 1; state.beat = SCENES[state.scene].max; lastNav = 'prev'; }
+    else return;
+    onBeat(); render();
+  }
+  function goPhase(k) {
+    LIVE.hold = Date.now() + 700;
+    const p = PHASES[k];
+    if (!p) return;
+    state.scene = p.from; state.beat = 0; lastNav = 'scene';
+    bumpMax(); onBeat(); render();
+  }
+
+  /* ── 조작 ─────────────────────────────── */
+  function selectToken(g) { state.selected = state.selected === g ? null : g; lastNav = 'none'; render(); }
+  function placeToken(h) {
+    const g = state.selected;
+    if (!g) { flashHint('먼저 모둠 자석을 누르세요.'); return; }
+    if (sceneId() === 'quiz') {
+      if (h > 2) return;
+      state.quiz[state.beat >> 1][g] = h;
+      liveWrite(`quiz/${state.beat >> 1}/${g}`, h);
+    } else if (sceneId() === 'bet') {
+      state.bets[g] = h;
+      liveWrite(`bets/${g}`, h);
+    } else return;
+    state.selected = null; lastNav = 'none'; render();
+  }
+  function unplace() {
+    const g = state.selected;
+    if (!g) return;
+    if (sceneId() === 'quiz') { delete state.quiz[state.beat >> 1][g]; liveWrite(`quiz/${state.beat >> 1}/${g}`, null); }
+    else if (sceneId() === 'bet') { delete state.bets[g]; liveWrite(`bets/${g}`, null); }
+    state.selected = null; lastNav = 'none'; render();
+  }
+  function clampAll() {
+    const ok = (g) => Number(g) >= 1 && Number(g) <= state.groups;
+    state.quiz.forEach((q) => Object.keys(q).forEach((g) => { if (!ok(g)) delete q[g]; }));
+    ['bets', 'bonus'].forEach((key) => Object.keys(state[key]).forEach((g) => { if (!ok(g)) delete state[key][g]; }));
+    if (state.focusG && !ok(state.focusG)) state.focusG = null;
+    if (state.votes.counter && !ok(state.votes.counter)) state.votes.counter = null;
+    if (state.votes.reply && !ok(state.votes.reply)) state.votes.reply = null;
+    if (state.selected && !ok(state.selected)) state.selected = null;
+  }
+
+  let resetArmed = 0;
+  function resetClick() {
+    if (Date.now() - resetArmed < 4000) {
+      state = fresh(); resetArmed = 0; lastNav = 'scene'; setTimer(30); liveSubscribe(); render();
+      return;
+    }
+    resetArmed = Date.now();
+    drawLive();
+    setTimeout(drawLive, 4100);
+  }
+
+  main.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b || !main.contains(b)) return;
+    const d = b.dataset;
+    if (d.action === 'reset') resetClick(b);
+    else if (d.action === 'join') openJoin();
+    else if (d.action === 'vote-auto') { state.voteManual[d.kind] = false; applyRoom(LIVE.data); }
+    else if (d.action === 'unplace') unplace();
+    else if (d.action === 'pick') { const inp = $('file-' + d.k); if (inp) inp.click(); }
+    else if (d.focus) { state.focusG = d.focus === 'all' ? null : d.focus; lastNav = 'none'; render(); }
+    else if (d.groups) { state.groups = Number(d.groups); clampAll(); lastNav = 'none'; render(); }
+    else if (d.token) selectToken(d.token);
+    else if (d.hole != null) placeToken(Number(d.hole));
+    else if (d.reveal) next();
+    else if (d.vote) {
+      const [kind, g] = d.vote.split(':');
+      state.votes[kind] = state.votes[kind] === g ? null : g;
+      state.voteManual[kind] = true;
+      lastNav = 'none'; render();
+    }
+    else if (d.tally) {
+      const [side, delta] = d.tally.split(':').map(Number);
+      state.tally[side] = Math.max(0, Math.min(99, state.tally[side] + delta));
+      lastNav = 'none'; render();
+    }
+  });
+
+  main.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t.classList || !t.classList.contains('bx-in')) return;
+    const f = t.dataset.f;
+    if (!LIMITS[f]) return;
+    card(t.dataset.g)[f] = t.value.slice(0, LIMITS[f]);
+    autosize(t);
+    saveSoon();
+    liveTypeSoon(t.dataset.g, f);
+  });
+  main.addEventListener('change', (e) => {
+    const inp = e.target;
+    if (!inp || inp.type !== 'file' || !inp.id.startsWith('file-')) return;
+    const k = inp.id.slice(5), f = inp.files && inp.files[0];
+    if (!f) return;
+    try {
+      if (videoUrl[k]) URL.revokeObjectURL(videoUrl[k]);
+      videoUrl[k] = URL.createObjectURL(f);
+      videoName[k] = f.name;
+      videoEl(k).src = videoUrl[k];
+    } catch (err) { flashHint('이 영상 파일을 열 수 없습니다. 다른 파일을 골라 주세요.'); return; }
+    lastNav = 'none'; render();
+  });
+
+  rail.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-bonus]');
+    if (!b) return;
+    const [g, delta] = b.dataset.bonus.split(':');
+    state.bonus[g] = Math.max(-9, Math.min(30, (Number(state.bonus[g]) || 0) + Number(delta)));
+    renderRail(); save();
+  });
+  phasesEl.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-phase]');
+    if (b) goPhase(Number(b.dataset.phase));
+  });
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+
+  /* ── 출처 ─────────────────────────────── */
+  let lastFocus = null;
+  function openSources() {
+    srcList.innerHTML = SOURCES.map((s) => `<li>${s.u ? `<a href="${s.u}" target="_blank" rel="noopener">${s.t}</a>` : s.t}</li>`).join('');
+    lastFocus = document.activeElement;
+    overlay.hidden = false;
+    srcClose.focus();
+  }
+  function closeSources() {
+    if (overlay.hidden) return;
+    overlay.hidden = true;
+    if (lastFocus && lastFocus.isConnected) lastFocus.focus();
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-open-sources]')) openSources(); });
+  srcClose.addEventListener('click', closeSources);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSources(); });
+
+  /* ── 타이머 · 소리 ─────────────────────── */
+  const timer = { total: 90, remain: 90, running: false, end: 0, int: 0 };
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  function drawTimer() {
+    tDisplay.textContent = fmt(timer.remain);
+    timerEl.classList.toggle('running', timer.running);
+    tPlay.textContent = timer.running ? '멈춤' : '시작';
+    timerEl.querySelectorAll('.t-preset').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.sec) === timer.total)));
+  }
+  function setTimer(sec) {
+    clearInterval(timer.int);
+    timer.total = sec; timer.remain = sec; timer.running = false;
+    timerEl.classList.remove('done');
+    drawTimer();
+  }
+  function tick() {
+    if (!timer.running) return;
+    timer.remain = Math.max(0, Math.ceil((timer.end - Date.now()) / 1000));
+    if (timer.remain === 0) {
+      timer.running = false;
+      clearInterval(timer.int);
+      timerEl.classList.remove('done');
+      void timerEl.offsetWidth;
+      timerEl.classList.add('done');
+      beep([880, 880], [0, 0.35], 'sine');
+    }
+    drawTimer();
+  }
+  function startTimer() {
+    if (timer.remain <= 0) timer.remain = timer.total;
+    timerEl.classList.remove('done');
+    timer.running = true;
+    timer.end = Date.now() + timer.remain * 1000;
+    clearInterval(timer.int);
+    timer.int = setInterval(tick, 200);
+    drawTimer();
+  }
+  function pauseTimer() { tick(); timer.running = false; clearInterval(timer.int); drawTimer(); }
+  let actx = null;
+  function beep(freqs, delays, type) {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      actx = actx || new AC();
+      freqs.forEach((f, i) => {
+        const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + delays[i];
+        o.type = type; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
+        o.connect(g); g.connect(actx.destination);
+        o.start(t0); o.stop(t0 + 0.32);
+      });
+    } catch (err) { /* 소리는 선택 사항 */ }
+  }
+  timerEl.addEventListener('click', (e) => {
+    const p = e.target.closest('.t-preset');
+    if (p) setTimer(Number(p.dataset.sec));
+  });
+  tPlay.addEventListener('click', () => (timer.running ? pauseTimer() : startTimer()));
+  tReset.addEventListener('click', () => setTimer(timer.total));
+
+  /* ── 전체 화면 ─────────────────────────── */
+  function toggleFs() {
+    try {
+      if (!document.fullscreenElement) {
+        const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+        if (p && p.catch) p.catch(() => {});
+      } else {
+        const p = document.exitFullscreen && document.exitFullscreen();
+        if (p && p.catch) p.catch(() => {});
+      }
+    } catch (err) { /* 전체 화면을 지원하지 않는 화면 */ }
+  }
+  fsBtn.addEventListener('click', toggleFs);
+  document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement ? '창 모드' : '전체 화면'; });
+
+  /* ── 키보드 · 클리커 ───────────────────── */
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!overlay.hidden) { if (e.key === 'Escape') closeSources(); return; }
+    if (!joinOv.hidden) { if (e.key === 'Escape') closeJoin(); return; }
+    const tag = (e.target && e.target.tagName ? e.target.tagName : '').toLowerCase();
+    if (['input', 'textarea', 'select', 'video'].includes(tag)) return;
+    const k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown') { e.preventDefault(); next(); }
+    else if (k === 'ArrowLeft' || k === 'PageUp') { e.preventDefault(); prev(); }
+    else if (k === ' ' && tag !== 'button') { e.preventDefault(); next(); }
+    else if (k === 'f' || k === 'F' || k === 'ㄹ') toggleFs();
+  });
+
+  /* ── 저장 ─────────────────────────────── */
+  function snapshotState() {
+    const { selected, ...rest } = state;
+    return JSON.parse(JSON.stringify(rest));
+  }
+  const isG = (g) => /^[1-6]$/.test(String(g));
+  function sanitize(s) {
+    const out = {};
+    if (!s || typeof s !== 'object') return out;
+    const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+    if (int(s.scene, 0, SCENES.length - 1)) out.scene = s.scene;
+    if (int(s.beat, 0, 99)) out.beat = Math.min(s.beat, SCENES[out.scene || 0].max);
+    if ([4, 5, 6].includes(s.groups)) out.groups = s.groups;
+    if (s.max && int(s.max.scene, 0, SCENES.length - 1) && int(s.max.beat, 0, 99)) out.max = { scene: s.max.scene, beat: Math.min(s.max.beat, SCENES[s.max.scene].max) };
+    const map = (o, ok) => { const r = {}; if (o && typeof o === 'object') Object.entries(o).forEach(([g, v]) => { if (isG(g) && ok(v)) r[g] = v; }); return r; };
+    if (Array.isArray(s.quiz)) out.quiz = [0, 1].map((i) => map(s.quiz[i], (v) => int(v, 0, 2)));
+    out.bets = map(s.bets, (v) => int(v, 0, OUT));
+    if (Array.isArray(s.tally)) out.tally = [0, 1].map((i) => (int(s.tally[i], 0, 99) ? s.tally[i] : 0));
+    out.bonus = map(s.bonus, (v) => int(v, -9, 30));
+    out.cards = {};
+    if (s.cards && typeof s.cards === 'object') {
+      Object.entries(s.cards).forEach(([g, c]) => {
+        if (!isG(g) || !c || typeof c !== 'object') return;
+        const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
+        out.cards[g] = { policy: str(c.policy, LIMITS.policy), counter: str(c.counter, LIMITS.counter), reply: str(c.reply, LIMITS.reply) };
+      });
+    }
+    if (isG(s.focusG)) out.focusG = String(s.focusG);
+    if (s.votes && typeof s.votes === 'object') out.votes = { counter: isG(s.votes.counter) ? String(s.votes.counter) : null, reply: isG(s.votes.reply) ? String(s.votes.reply) : null };
+    if (/^[0-9]{4}$/.test(String(s.room || ''))) out.room = String(s.room);
+    if (s.started === true) out.started = true;
+    if (s.voteManual && typeof s.voteManual === 'object') out.voteManual = { counter: s.voteManual.counter === true, reply: s.voteManual.reply === true };
+    return out;
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(Object.assign(snapshotState(), { savedAt: Date.now() }))); } catch (err) { /* 저장 불가 */ }
+  }
+  let saveT = 0;
+  function saveSoon() { clearTimeout(saveT); saveT = setTimeout(save, 300); }
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (!s || typeof s.savedAt !== 'number' || Date.now() - s.savedAt > MAX_AGE) return;
+      state = Object.assign(fresh(), sanitize(s));
+      clampAll();
+    } catch (err) { /* 저장된 진행 없음 */ }
+  }
+
+  /* ── QR 코드 (바이트 모드, 오류 정정 M, 버전 1~10) ─ */
+  const QR = (() => {
+    // 표준 표(ISO/IEC 18004)에서 버전 1~10만: 블록당 오류 정정 코드어 수와 블록 수
+    const ECW = { L: [0, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18], M: [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26], Q: [0, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24], H: [0, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28] };
+    const NB = { L: [0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4], M: [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5], Q: [0, 1, 1, 2, 2, 4, 4, 6, 6, 8, 8], H: [0, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8] };
+    const FMT = { L: 1, M: 0, Q: 3, H: 2 };
+    const bit = (x, i) => ((x >>> i) & 1) !== 0;
+    function gmul(x, y) {
+      let z = 0;
+      for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11d); z ^= ((y >>> i) & 1) * x; }
+      return z;
+    }
+    function divisor(deg) {
+      const r = new Array(deg).fill(0); r[deg - 1] = 1;
+      let root = 1;
+      for (let i = 0; i < deg; i++) {
+        for (let j = 0; j < r.length; j++) { r[j] = gmul(r[j], root); if (j + 1 < r.length) r[j] ^= r[j + 1]; }
+        root = gmul(root, 2);
+      }
+      return r;
+    }
+    function remainder(data, div) {
+      const r = div.map(() => 0);
+      data.forEach((b) => {
+        const f = b ^ r.shift(); r.push(0);
+        div.forEach((c, i) => { r[i] ^= gmul(c, f); });
+      });
+      return r;
+    }
+    const rawModules = (v) => {
+      let n = (16 * v + 128) * v + 64;
+      if (v >= 2) { const a = Math.floor(v / 7) + 2; n -= (25 * a - 10) * a - 55; if (v >= 7) n -= 36; }
+      return n;
+    };
+    const dataCodewords = (v, e) => Math.floor(rawModules(v) / 8) - ECW[e][v] * NB[e][v];
+    function alignPos(v) {
+      if (v === 1) return [];
+      const n = Math.floor(v / 7) + 2, size = v * 4 + 17;
+      const step = Math.ceil((v * 4 + 4) / (n * 2 - 2)) * 2;
+      const out = [6];
+      for (let p = size - 7; out.length < n; p -= step) out.splice(1, 0, p);
+      return out;
+    }
+
+    function make(text, e, force) {
+      e = e || 'M';
+      const bytes = Array.from(new TextEncoder().encode(String(text)));
+      let v = 1;
+      for (; v <= 10; v++) {
+        const cc = v < 10 ? 8 : 16;
+        if (4 + cc + bytes.length * 8 <= dataCodewords(v, e) * 8) break;
+      }
+      if (v > 10) throw new Error('QR: 너무 긴 주소');
+      const cap = dataCodewords(v, e) * 8, bb = [];
+      const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bb.push((val >>> i) & 1); };
+      put(4, 4); put(bytes.length, v < 10 ? 8 : 16); bytes.forEach((b) => put(b, 8));
+      put(0, Math.min(4, cap - bb.length)); put(0, (8 - (bb.length % 8)) % 8);
+      for (let pad = 0xec; bb.length < cap; pad ^= 0xec ^ 0x11) put(pad, 8);
+      const data = [];
+      for (let i = 0; i < bb.length; i += 8) data.push(bb.slice(i, i + 8).reduce((a, b) => (a << 1) | b, 0));
+
+      // 블록 나누기, 오류 정정, 끼워 넣기
+      const nb = NB[e][v], ecl = ECW[e][v], raw = Math.floor(rawModules(v) / 8);
+      const nShort = nb - (raw % nb), shortLen = Math.floor(raw / nb), div = divisor(ecl);
+      const blocks = [];
+      for (let i = 0, k = 0; i < nb; i++) {
+        const dat = data.slice(k, k + shortLen - ecl + (i < nShort ? 0 : 1)); k += dat.length;
+        const ec = remainder(dat, div);
+        if (i < nShort) dat.push(0);
+        blocks.push(dat.concat(ec));
+      }
+      const words = [];
+      for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== shortLen - ecl || j >= nShort) words.push(b[i]); });
+
+      // 기능 패턴
+      const size = v * 4 + 17;
+      const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+      const fun = Array.from({ length: size }, () => new Array(size).fill(false));
+      const setF = (x, y, d) => { mod[y][x] = d; fun[y][x] = true; };
+      for (let i = 0; i < size; i++) { setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
+      const finder = (cx, cy) => {
+        for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+          const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy;
+          if (x >= 0 && x < size && y >= 0 && y < size) setF(x, y, d !== 2 && d !== 4);
+        }
+      };
+      finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+      const ap = alignPos(v), na = ap.length;
+      for (let i = 0; i < na; i++) for (let j = 0; j < na; j++) {
+        if ((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)) continue;
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setF(ap[i] + dx, ap[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+      }
+      const drawFormat = (mask) => {
+        const d = (FMT[e] << 3) | mask;
+        let r = d;
+        for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+        const bits = ((d << 10) | r) ^ 0x5412;
+        for (let i = 0; i <= 5; i++) setF(8, i, bit(bits, i));
+        setF(8, 7, bit(bits, 6)); setF(8, 8, bit(bits, 7)); setF(7, 8, bit(bits, 8));
+        for (let i = 9; i < 15; i++) setF(14 - i, 8, bit(bits, i));
+        for (let i = 0; i < 8; i++) setF(size - 1 - i, 8, bit(bits, i));
+        for (let i = 8; i < 15; i++) setF(8, size - 15 + i, bit(bits, i));
+        setF(8, size - 8, true);
+      };
+      drawFormat(0);
+      if (v >= 7) {
+        let r = v;
+        for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1f25);
+        const bits = (v << 12) | r;
+        for (let i = 0; i < 18; i++) {
+          const a = size - 11 + (i % 3), b = Math.floor(i / 3);
+          setF(a, b, bit(bits, i)); setF(b, a, bit(bits, i));
+        }
+      }
+
+      // 데이터 채우기 (오른쪽 아래부터 지그재그)
+      let i = 0;
+      for (let right = size - 1; right >= 1; right -= 2) {
+        if (right === 6) right = 5;
+        for (let vert = 0; vert < size; vert++) {
+          for (let j = 0; j < 2; j++) {
+            const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vert : vert;
+            if (!fun[y][x] && i < words.length * 8) { mod[y][x] = bit(words[i >>> 3], 7 - (i & 7)); i++; }
+          }
+        }
+      }
+
+      const MASKS = [
+        (x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+        (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+        (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0, (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0,
+      ];
+      const applyMask = (m) => {
+        for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fun[y][x] && MASKS[m](x, y)) mod[y][x] = !mod[y][x];
+      };
+      const P1 = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0], P2 = P1.slice().reverse();
+      const penalty = () => {
+        let p = 0, dark = 0;
+        const line = (get) => {
+          let run = 1;
+          for (let k = 1; k <= size; k++) {
+            if (k < size && get(k) === get(k - 1)) run++;
+            else { if (run >= 5) p += 3 + run - 5; run = 1; }
+          }
+          for (let k = 0; k + 11 <= size; k++) {
+            let a = true, b = true;
+            for (let t = 0; t < 11; t++) { const c = get(k + t) ? 1 : 0; if (c !== P1[t]) a = false; if (c !== P2[t]) b = false; }
+            if (a) p += 40; if (b) p += 40;
+          }
+        };
+        for (let y = 0; y < size; y++) line((x) => mod[y][x]);
+        for (let x = 0; x < size; x++) line((y) => mod[y][x]);
+        for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) {
+          const c = mod[y][x];
+          if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) p += 3;
+        }
+        for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (mod[y][x]) dark++;
+        const total = size * size, k = Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1;
+        return p + Math.max(0, k) * 10;
+      };
+      let best = 0, bestP = Infinity;
+      for (let m = 0; m < 8; m++) {
+        applyMask(m); drawFormat(m);
+        const p = penalty();
+        if (p < bestP) { bestP = p; best = m; }
+        applyMask(m);
+      }
+      if (force != null) best = force;
+      applyMask(best); drawFormat(best);
+      return { size, version: v, mask: best, mod };
+    }
+
+    function svg(text, label) {
+      const q = make(text, 'M'), m = 4, n = q.size + m * 2;
+      let d = '';
+      q.mod.forEach((row, y) => {
+        for (let x = 0; x < q.size; x++) {
+          if (!row[x]) continue;
+          let len = 1;
+          while (x + len < q.size && row[x + len]) len++;
+          d += `M${x + m} ${y + m}h${len}v1h-${len}z`;
+          x += len - 1;
+        }
+      });
+      return `<svg class="qr-svg" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges" role="img" aria-label="${label || 'QR 코드'}"><rect width="${n}" height="${n}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+    }
+    return { make, svg };
+  })();
+
+  /* ── 실시간: 학생 폰 연결 (Firebase Realtime Database) ─
+     config.js에 주소가 있으면 켜진다. 연결이 안 되면 자석·손들기로 그대로 진행할 수 있다. */
+  const LIVE_KEY = 'dudeoji-live-v1';
+  const dbUrl = () => (typeof window.DUDEOJI_DB === 'string' ? window.DUDEOJI_DB.trim().replace(/\/+$/, '') : '');
+  const LIVE = { cfg: !!dbUrl(), enabled: false, status: 'off', err: '', db: null, ref: null, cb: null, room: '', data: null, lastAct: '', hold: 0, pending: false, typing: {} };
+  // Realtime Database는 숫자 키 묶음을 배열로 돌려줄 때가 있어, 객체와 배열을 똑같이 읽는다
+  const ent = (x) => (x && typeof x === 'object' ? Object.keys(x).filter((k) => x[k] != null).map((k) => [k, x[k]]) : []);
+  const atk = (x, k) => (x && typeof x === 'object' && x[k] != null ? x[k] : null);
+  const isGid = (g) => /^[1-6]$/.test(String(g)) && Number(g) <= state.groups;
+  const quizLocked = (qi) => reached(IDX.quiz, qi * 2 + 1);
+  const betLocked = () => betShownMax() > 0;
+  const votesLocked = () => reached(IDX.reflect, 0);
+
+  function studentUrl() {
+    let b = typeof window.DUDEOJI_STUDENT_URL === 'string' ? window.DUDEOJI_STUDENT_URL.trim() : '';
+    if (!b && /^https?:$/.test(location.protocol)) b = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
+    return b ? b.replace(/#.*$/, '') + '#' + state.room : '';
+  }
+  const qrCache = {};
+  const qrSvg = (u) => qrCache[u] || (qrCache[u] = QR.svg(u, '학생 참여 QR 코드'));
+  const shortUrl = (u) => String(u || '').replace(/^https?:\/\//, '');
+
+  function livePresence() {
+    const per = {};
+    let n = 0;
+    ent(LIVE.data && LIVE.data.presence).forEach(([, g]) => { const k = String(g); if (isGid(k)) { per[k] = (per[k] || 0) + 1; n += 1; } });
+    return { n, per };
+  }
+  function liveTally() {
+    const c = [0, 0];
+    ent(LIVE.data && LIVE.data.tally).forEach(([, v]) => { if (v === 0 || v === 1) c[v] += 1; });
+    return c;
+  }
+  function voteCounts(kind) {
+    const out = {};
+    gids().forEach((g) => { out[g] = 0; });
+    ent(atk(LIVE.data && LIVE.data.votes, kind)).forEach(([, v]) => {
+      if (!v || typeof v !== 'object') return;
+      const voter = String(v.g), box = String(v.v);
+      if (!isGid(voter) || !isGid(box)) return;
+      if (kind === 'counter' && nextG(box) === voter) return; // 자기 모둠이 쓴 반박
+      if (kind === 'reply' && box === voter) return; // 자기 모둠 답변
+      out[box] += 1;
+    });
+    return out;
+  }
+  function voteTops(kind) {
+    const c = voteCounts(kind), max = Math.max(0, ...Object.values(c));
+    return max > 0 ? Object.keys(c).filter((g) => c[g] === max) : [];
+  }
+
+  /* 지금 장면에 맞춰 학생 폰에 띄울 활동 */
+  function actFor() {
+    const id = sceneId(), b = state.beat;
+    if (!state.started) return { k: 'wait', title: '곧 시작합니다', msg: '위쪽의 모둠 번호가 맞는지 확인하세요. 선생님이 시작하면 문제가 뜹니다.' };
+    if (id === 'quiz') {
+      const qi = b >> 1, Q = QUIZ[qi], lock = quizLocked(qi);
+      return { k: 'pick', id: 'quiz' + qi, path: 'quiz/' + qi, eyebrow: `① 기억력 두더지 · 문제 ${qi + 1}/${QUIZ.length}`, title: `${Q.ask} ${Q.ask2}`,
+        opts: HOLES3.map((H) => H.name), lock, answer: lock ? Q.answer : null, picks: lock ? Object.assign({}, state.quiz[qi]) : null, pts: PT.quiz };
+    }
+    if (id === 'balance') {
+      if (b < BALANCE.length) return { k: 'bal', i: b, n: BALANCE.length, a: BALANCE[b][0], b: BALANCE[b][1] };
+      return { k: 'wait', title: '② 밸런스 게임 정리', msg: '방금 여러분이 고른 이유가, 2025년 두더지가 튀어나올 구멍입니다.' };
+    }
+    if (id === 'credit') return { k: 'wait', title: '고교학점제 영상', msg: '화면의 영상을 보세요. 2025년에 무엇이 바뀌었는지 확인합니다.' };
+    if (id === 'bet') {
+      const lock = betLocked(), c = b >= 1 && b <= CARDS.length ? CARDS[b - 1] : null;
+      return { k: 'pick', id: 'bet', path: 'bets', eyebrow: '③ 2025 두더지 베팅', title: '2025년, 두더지는 어디서 나올까?',
+        opts: HOLES5.concat(['안 나온다 (경쟁이 줄어든다)']), lock, picks: lock ? Object.assign({}, state.bets) : null,
+        mole: lock ? moleStatus(betShown()) : null, card: c ? { kicker: c.kicker, head: c.head } : null, done: b > CARDS.length, pts: PT.bet };
+    }
+    if (id === 'board') { const St = BOARD_STEPS[b]; return { k: 'board', step: b, ex: St.ex, hint: St.hint || '', limits: LIMITS }; }
+    if (id === 'reflect') {
+      return b === 0 ? { k: 'tally', q: REFLECT_Q, opts: ['사라진다', '그래도 남는다'] }
+        : { k: 'wait', title: CORE_Q, msg: '말로 답해 봅시다. 처음 생각과 무엇이 달라졌나요?' };
+    }
+    if (id === 'finale') {
+      const Sc = scores(), totals = {};
+      gids().forEach((g) => { totals[g] = Sc[g].total; });
+      const topv = Math.max(0, ...Object.values(totals));
+      return { k: 'end', winners: topv > 0 ? gids().filter((g) => totals[g] === topv) : [], totals, teaser: b === 1 };
+    }
+    return { k: 'wait', title: '60년, 두더지 잡기', msg: '화면을 보세요.' };
+  }
+
+  function liveFail(e) {
+    const m = String((e && (e.code || e.message)) || e);
+    LIVE.err = m;
+    if (/permission/i.test(m)) LIVE.status = 'denied';
+    drawLive();
+  }
+  function liveWrite(p, v) {
+    if (!LIVE.enabled || !LIVE.ref) return Promise.resolve();
+    return LIVE.ref.child(p).set(v == null ? null : v).catch(liveFail);
+  }
+  function publishAct(force) {
+    if (!LIVE.enabled || !LIVE.ref) return;
+    const json = JSON.stringify({ v: 1, groups: state.groups, act: actFor() });
+    if (!force && json === LIVE.lastAct) return;
+    LIVE.lastAct = json;
+    LIVE.ref.child('live').set(json).catch(liveFail);
+  }
+
+  /* 폰에서 온 것을 게임 상태에 합친다. 정답·카드를 공개한 뒤에는 자석을 받지 않는다. */
+  function applyRoom(v) {
+    LIVE.data = v && typeof v === 'object' ? v : {};
+    cacheLive();
+    const d = LIVE.data;
+    [0, 1].forEach((qi) => {
+      if (quizLocked(qi)) return;
+      ent(atk(d.quiz, qi)).forEach(([g, h]) => { if (isGid(g) && Number.isInteger(h) && h >= 0 && h <= 2) state.quiz[qi][g] = h; });
+    });
+    if (!betLocked()) ent(d.bets).forEach(([g, h]) => { if (isGid(g) && Number.isInteger(h) && h >= 0 && h <= OUT) state.bets[g] = h; });
+    ent(d.cards).forEach(([g, c]) => {
+      if (!isGid(g) || !c || typeof c !== 'object') return;
+      FIELD_ORDER.forEach((f) => {
+        if (typeof c[f] !== 'string' || LIVE.typing[g + ':' + f]) return;
+        const el = document.getElementById(`bx-${g}-${f}`);
+        if (el && document.activeElement === el) return;
+        card(g)[f] = c[f].slice(0, LIMITS[f]);
+      });
+    });
+    if (!votesLocked()) {
+      ['counter', 'reply'].forEach((kind) => {
+        if (state.voteManual[kind]) return;
+        const tops = voteTops(kind);
+        state.votes[kind] = tops.length === 1 ? tops[0] : null;
+      });
+    }
+    liveRender();
+  }
+
+  /* 폰 소식으로 다시 그릴 때: 넘김 애니메이션·클릭·교사 입력을 방해하지 않게 잠깐 기다린다 */
+  let liveT = 0, ptrDown = false;
+  document.addEventListener('pointerdown', () => { ptrDown = true; }, true);
+  const ptrUp = () => { ptrDown = false; if (LIVE.pending) setTimeout(() => { if (!ptrDown && LIVE.pending) liveRender(); }, 90); };
+  document.addEventListener('pointerup', ptrUp, true);
+  document.addEventListener('pointercancel', ptrUp, true);
+  main.addEventListener('focusout', () => {
+    if (!LIVE.pending) return;
+    setTimeout(() => { const a = document.activeElement; if (!(a && a.classList && a.classList.contains('bx-in'))) liveRender(); }, 120);
+  });
+  function liveRender() {
+    drawLive();
+    if (liveT) return;
+    const wait = Math.max(0, LIVE.hold - Date.now());
+    liveT = setTimeout(() => {
+      liveT = 0;
+      const a = document.activeElement;
+      if (ptrDown || (a && a.classList && a.classList.contains('bx-in'))) { LIVE.pending = true; return; }
+      LIVE.pending = false;
+      if (main.querySelector('.video-frame.has')) return;
+      lastNav = 'none';
+      render();
+    }, wait + 40);
+  }
+
+  const typeT = {};
+  function liveTypeSoon(g, f) {
+    if (!LIVE.enabled) return;
+    const k = g + ':' + f;
+    LIVE.typing[k] = true;
+    clearTimeout(typeT[k]);
+    typeT[k] = setTimeout(() => { liveWrite(`cards/${g}/${f}`, card(g)[f] || null).then(() => { delete LIVE.typing[k]; }); }, 450);
+  }
+
+  function readCache(room) {
+    try {
+      const c = JSON.parse(localStorage.getItem(LIVE_KEY) || 'null');
+      return c && c.room === room && c.data && typeof c.data === 'object' ? c.data : null;
+    } catch (e) { return null; }
+  }
+  let cacheT = 0;
+  function cacheLive() {
+    clearTimeout(cacheT);
+    cacheT = setTimeout(() => { try { localStorage.setItem(LIVE_KEY, JSON.stringify({ room: LIVE.room, data: LIVE.data, at: Date.now() })); } catch (e) { /* 저장 불가 */ } }, 400);
+  }
+
+  function liveSubscribe() {
+    // 새 방으로 바꿀 때, 옛 방에 남은 폰들이 따라오도록 표시를 남긴다
+    if (LIVE.enabled && LIVE.ref && LIVE.room && LIVE.room !== state.room) {
+      LIVE.ref.child('live').set(JSON.stringify({ v: 1, moved: state.room, act: { k: 'wait', title: '새 방으로 옮기는 중', msg: '잠시만 기다리세요.' } })).catch(liveFail);
+    }
+    LIVE.room = state.room;
+    LIVE.data = readCache(state.room);
+    if (!LIVE.enabled) return;
+    if (LIVE.ref && LIVE.cb) LIVE.ref.off('value', LIVE.cb);
+    LIVE.lastAct = '';
+    LIVE.ref = LIVE.db.ref('rooms/' + state.room);
+    LIVE.cb = LIVE.ref.on('value', (snap) => applyRoom(snap.val()), (err) => { LIVE.status = 'error'; LIVE.err = String((err && (err.code || err.message)) || err); drawLive(); });
+    publishAct(true);
+  }
+  function liveBoot() {
+    LIVE.cfg = !!dbUrl();
+    if (!LIVE.cfg) { drawLive(); return; }
+    LIVE.room = state.room;
+    LIVE.data = LIVE.data || readCache(state.room);
+    if (!window.firebase || typeof window.firebase.initializeApp !== 'function') { LIVE.status = 'nosdk'; lastNav = 'none'; render(); return; }
+    try {
+      firebase.initializeApp({ databaseURL: dbUrl() });
+      LIVE.db = firebase.database();
+    } catch (e) { LIVE.status = 'error'; LIVE.err = String((e && e.message) || e); lastNav = 'none'; render(); return; }
+    LIVE.enabled = true;
+    LIVE.status = 'connecting';
+    LIVE.db.ref('.info/connected').on('value', (s) => {
+      if (s.val() === true) { if (LIVE.status !== 'denied') LIVE.status = 'ok'; publishAct(true); }
+      else if (LIVE.status !== 'connecting') LIVE.status = 'down';
+      drawLive();
+      if (!hintEl.classList.contains('flash')) hintEl.textContent = hintText();
+    });
+    liveSubscribe();
+    lastNav = 'none';
+    render();
+  }
+
+  /* 위쪽 상태 표시와 QR 창 */
+  const liveChip = $('liveChip'), joinOv = $('join'), joinBody = $('joinBody'), joinClose = $('joinClose');
+  function chip() {
+    const p = livePresence();
+    switch (LIVE.status) {
+      case 'ok': return { t: `● 방 ${state.room} · ${p.n}명`, warn: false };
+      case 'connecting': return { t: '실시간 연결 중…', warn: false };
+      case 'down': return { t: '연결 끊김 · 다시 연결 중', warn: true };
+      case 'denied': return { t: '저장 거부 · 규칙 확인', warn: true };
+      case 'nosdk': return { t: '실시간 꺼짐 · 인터넷 확인', warn: true };
+      case 'error': return { t: '실시간 오류', warn: true };
+      default: return null;
+    }
+  }
+  function setupRow() {
+    const armed = Date.now() - resetArmed < 4000;
+    return `<div class="setup-row">
+        <span class="setup-k" id="groupsLabel">모둠 수</span>
+        <div class="seg" role="group" aria-labelledby="groupsLabel">${[4, 5, 6].map((n) => `<button type="button" class="seg-btn" data-groups="${n}" aria-pressed="${state.groups === n}">${n}모둠</button>`).join('')}</div>
+        <button type="button" class="link-btn${armed ? ' warn' : ''}" data-action="reset">${armed ? '한 번 더 누르면 모든 점수와 기록을 지웁니다' : '처음부터 다시'}</button>
+        <button type="button" class="btn-next sm" data-action="start">${state.started ? '닫기' : '시작하기 →'}</button>
+      </div>`;
+  }
+  function joinPanel() {
+    if (!LIVE.cfg) return `<div class="setup-only"><p class="join-k">모둠 수를 확인하고 시작하세요. 점수는 정답보다 근거에 줍니다.</p>${setupRow()}</div>`;
+    const url = studentUrl(), p = livePresence();
+    const msg = {
+      ok: '연결됨', connecting: '연결하는 중…',
+      down: '연결이 끊겼습니다. 다시 연결되면 이어집니다. 그동안은 자석·손들기로 진행하세요.',
+      denied: '데이터베이스가 저장을 막고 있습니다. Firebase 보안 규칙을 확인하세요.',
+      nosdk: '연결 도구를 불러오지 못했습니다. 인터넷을 확인하고 새로고침하세요.',
+      error: '연결 오류: ' + LIVE.err,
+    }[LIVE.status] || '';
+    return `<div class="join-qr big">${url ? qrSvg(url) : '<p class="join-noqr">학생 주소를 알 수 없습니다. GitHub Pages 주소로 이 화면을 여세요.</p>'}</div>
+      <div class="join-side">
+        <p class="join-k">휴대폰 카메라로 QR을 찍거나 주소를 여세요</p>
+        <p class="join-url">${esc(shortUrl(url) || '—')}</p>
+        <p class="join-room">방 번호<b>${state.room}</b></p>
+        <ul class="join-groups">${gids().map((g) => `<li>${token(g, 'xs')}<span>${p.per[g] || 0}명</span></li>`).join('')}</ul>
+        <p class="join-status${LIVE.status === 'ok' ? '' : ' warn'}">${esc(msg)} · 접속 ${p.n}명</p>
+        ${setupRow()}
+      </div>`;
+  }
+  const joinTitle = $('joinTitle');
+  let joinHtml = '';
+  function drawJoin(force) {
+    if (joinOv.hidden) return;
+    joinTitle.textContent = LIVE.cfg ? '폰으로 참여 · 게임 준비' : '게임 준비';
+    joinBody.classList.toggle('solo', !LIVE.cfg);
+    const html = joinPanel();
+    if (!force && (html === joinHtml || ptrDown)) return;
+    joinHtml = html;
+    joinBody.innerHTML = html;
+  }
+  function drawLive() {
+    const c = LIVE.cfg ? chip() : { t: `준비 · ${state.groups}모둠`, warn: false };
+    liveChip.hidden = !c;
+    if (c) { liveChip.textContent = c.t; liveChip.classList.toggle('warn', c.warn); }
+    drawJoin();
+  }
+  let joinFocus = null;
+  function openJoin() {
+    joinOv.hidden = false;
+    drawJoin(true);
+    joinFocus = document.activeElement;
+    joinClose.focus();
+  }
+  function closeJoin() {
+    if (joinOv.hidden) return;
+    joinOv.hidden = true;
+    if (!state.started) { state.started = true; lastNav = 'none'; render(); }
+    if (joinFocus && joinFocus.isConnected && joinFocus !== document.body) joinFocus.focus();
+  }
+  liveChip.addEventListener('click', openJoin);
+  joinClose.addEventListener('click', closeJoin);
+  joinOv.addEventListener('click', (e) => {
+    if (e.target === joinOv) { closeJoin(); return; }
+    const b = e.target.closest('button');
+    if (!b || !joinBody.contains(b)) return;
+    const d = b.dataset;
+    if (d.groups) { state.groups = Number(d.groups); clampAll(); lastNav = 'none'; render(); drawJoin(true); }
+    else if (d.action === 'reset') { resetClick(); drawJoin(true); }
+    else if (d.action === 'start') closeJoin();
+  });
+
+  const phoneN = (n) => (n ? ` · 폰 ${n}` : '');
+
+  function liveHint() {
+    if (['down', 'nosdk', 'error', 'denied'].includes(LIVE.status)) return '실시간 연결이 끊겼습니다. 자석 놓기·손들기 세기·칸 직접 입력으로 그대로 진행하세요. 위쪽 상태 표시를 누르면 자세히 보입니다.';
+    const id = sceneId(), b = state.beat;
+    switch (id) {
+      case 'quiz': return b % 2 === 0 ? '모둠 폰으로 구멍을 고르면 자석이 바로 붙습니다. 폰이 없는 모둠은 자석을 직접 붙이세요. 타이머 0:30.' : `정답을 공개하면 폰 입력이 잠깁니다. 맞힌 모둠은 ${PT.quiz}점.`;
+      case 'balance': return b < BALANCE.length ? '폰에도 같은 질문이 뜹니다. 인원은 세지 않으니, 한두 명에게 고른 이유를 물으세요.' : null;
+      case 'credit': return '폰에는 ‘화면을 보세요’가 뜹니다. 영상이 끝나면 오른쪽의 바뀐 규칙 세 가지를 짚으세요.';
+      case 'bet': return b === 0 ? '모둠 폰으로 구멍을 고르면 자석이 붙습니다. 첫 카드를 공개하면 베팅이 잠깁니다. 타이머 1:30.' : null;
+      case 'board': return ['모둠 폰으로 정책을 적어 올리면 칸에 바로 뜹니다. 폰이 없는 모둠은 화면 칸에 직접 적어도 됩니다. 타이머 2:00.', '각 칸의 반박은 다음 번호 모둠이 폰으로 적습니다. 타이머 2:00.', '‘크게’로 한 모둠씩 띄워 답을 들은 뒤 폰으로 투표하게 하세요. 가장 많이 받은 칸이 자동으로 뽑힙니다. 타이머 3:00.'][b];
+      case 'reflect': return ['폰으로 고른 인원이 바로 셉니다. 한두 명에게 이유를 물으세요.', '처음 질문을 다시 묻고, 한두 명이 처음 생각과 달라진 점을 말하게 하세요.'][b];
+      default: return null;
+    }
+  }
+
+  try { window.claude?.hot?.snapshot?.(() => ({ state: snapshotState() })); } catch (err) { /* 선택 사항 */ }
+
+  function start(data) {
+    if (data && data.state) { state = Object.assign(fresh(), sanitize(data.state)); clampAll(); }
+    else load();
+    setTimer(timerFor(sceneId(), state.beat) || 90);
+    lastNav = 'none';
+    render();
+    if (!state.started) openJoin();
+    if (!LIVE.booted) {
+      LIVE.booted = true;
+      if (document.readyState === 'complete') liveBoot();
+      else window.addEventListener('load', liveBoot, { once: true });
+    }
+  }
+
+  if (window.claude?.hot?.ready) window.claude.hot.ready(start);
+  else start(window.claude?.hot?.data ?? {});
+})();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</body>
+</html>
