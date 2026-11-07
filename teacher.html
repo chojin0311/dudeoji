@@ -947,7 +947,7 @@ ol, ul { padding: 0; list-style: none; }
             const n = (v) => (a + c ? `<b>${v}</b>` : '');
             return `<li><span>${q[0]} ${n(a)}</span><i>vs</i><span>${n(c)} ${q[1]}</span></li>`;
           }).join('')}</ul>
-          <p class="link-line${enterCls()}">방금 여러분이 고른 이유가,<br><mark>2025년 두더지가 튀어나올 구멍</mark>입니다.</p>
+          <p class="link-line${enterCls()}">예전 고등학생도<br><mark>이렇게 고를 수 있었을까?</mark></p>
         </section>`;
       }
       const q = BALANCE[b], [a, c] = count(b);
@@ -1176,7 +1176,7 @@ ol, ul { padding: 0; list-style: none; }
     const id = sceneId(), b = state.beat;
     switch (id) {
       case 'quiz': return b % 2 === 0 ? '모둠 자석을 누른 다음, 그 모둠이 든 번호의 구멍을 누르세요. 타이머 0:30.' : `맞힌 모둠은 ${PT.quiz}점. 기록을 함께 읽으세요.`;
-      case 'balance': return b < BALANCE.length ? '양쪽 인원을 + 로 세어도 되고, 건너뛰어도 됩니다.' : '이 문장으로 고교학점제 영상과 잇습니다.';
+      case 'balance': return b < BALANCE.length ? '양쪽 인원을 + 로 세어도 되고, 건너뛰어도 됩니다.' : '인원을 읽어 주고 PPT 질문 1~3으로 넘어가세요. 돌아와서 다음을 누르면 고교학점제 영상입니다.';
       case 'credit': return '영상 파일을 열어 트세요. 끝나면 오른쪽의 바뀐 규칙 세 가지를 짚고 베팅으로 넘어갑니다.';
       case 'bet':
         if (b === 0) return '모둠 자석을 누른 다음 구멍을 누르세요. 판 밖은 ‘안 나온다’입니다. 타이머 1:30.';
@@ -1832,7 +1832,7 @@ ol, ul { padding: 0; list-style: none; }
     }
     if (id === 'balance') {
       if (b < BALANCE.length) return { k: 'bal', i: b, n: BALANCE.length, a: BALANCE[b][0], b: BALANCE[b][1] };
-      return { k: 'wait', title: '① 밸런스 게임 정리', msg: '방금 여러분이 고른 이유가, 2025년 두더지가 튀어나올 구멍입니다.' };
+      return { k: 'wait', title: '① 밸런스 게임 정리', msg: '예전 고등학생도 이렇게 고를 수 있었을까? 선생님 화면을 보세요.' };
     }
     if (id === 'credit') return { k: 'wait', title: '고교학점제 영상', msg: '화면의 영상을 보세요. 2025년에 무엇이 바뀌었는지 확인합니다.' };
     if (id === 'bet') {
