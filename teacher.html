@@ -451,6 +451,9 @@ ol, ul { padding: 0; list-style: none; }
 .src-list { list-style: decimal; padding-left: 1.3rem; display: grid; gap: .4rem; font-size: .93rem; line-height: 1.5; }
 .src-list a { color: var(--ink); text-underline-offset: 3px; }
 
+.counter.big b { font-size: clamp(3rem, 5vw, 4.6rem); line-height: 1; }
+.counter.big span { font-size: 1.1rem; color: var(--chalk-2); }
+
 /* 준비 창 */
 .setup-row { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding-top: .9rem; border-top: 1px dashed var(--rule); }
 .setup-k { font-weight: 700; }
@@ -747,7 +750,7 @@ ol, ul { padding: 0; list-style: none; }
   const newRoom = () => String(1000 + Math.floor(Math.random() * 9000));
   const fresh = () => ({
     scene: 0, beat: 0, groups: 6, max: { scene: 0, beat: 0 },
-    quiz: [{}, {}], bets: {}, cards: {}, started: false,
+    quiz: [{}, {}], balance: [[0, 0], [0, 0], [0, 0]], bets: {}, cards: {}, started: false,
     focusG: null, votes: { counter: null, reply: null }, tally: [0, 0], bonus: {}, selected: null,
     room: newRoom(), voteManual: { counter: false, reply: false },
   });
@@ -891,7 +894,7 @@ ol, ul { padding: 0; list-style: none; }
     </div>`;
   }
   function mountVideos() {
-    ['credit', 'teaser'].forEach((k) => {
+    ['credit'].forEach((k) => {
       const slot = main.querySelector(`#slot-${k} .vid-mount`);
       if (slot && videoUrl[k]) slot.appendChild(videoEl(k));
     });
@@ -941,22 +944,33 @@ ol, ul { padding: 0; list-style: none; }
     },
     balance() {
       const b = state.beat;
+      const count = (i) => (LIVE.cfg ? liveBal(i) : state.balance[i]);
       if (b >= BALANCE.length) {
         return `<section class="balance">
-          <header class="scene-head"><p class="eyebrow">② 밸런스 게임 · 정리</p><h2 class="scene-title">고른 이유를 떠올려 보세요</h2></header>
-          <ul class="bal-sum">${BALANCE.map((q) => `<li><span>${q[0]}</span><i>vs</i><span>${q[1]}</span></li>`).join('')}</ul>
+          <header class="scene-head"><p class="eyebrow">② 밸런스 게임 · 정리</p><h2 class="scene-title">여러분이 고른 것</h2></header>
+          <ul class="bal-sum">${BALANCE.map((q, i) => {
+            const [a, c] = count(i);
+            const n = (v) => (a + c ? `<b>${v}</b>` : '');
+            return `<li><span>${q[0]} ${n(a)}</span><i>vs</i><span>${n(c)} ${q[1]}</span></li>`;
+          }).join('')}</ul>
           <p class="link-line${enterCls()}">방금 여러분이 고른 이유가,<br><mark>2025년 두더지가 튀어나올 구멍</mark>입니다.</p>
         </section>`;
       }
-      const q = BALANCE[b];
+      const q = BALANCE[b], [a, c] = count(b);
+      const counter = (side, v) => (LIVE.cfg
+        ? `<div class="counter big"><b aria-live="polite">${v}</b><span>명</span></div>`
+        : `<div class="counter">
+          <button type="button" data-bal="${b}:${side}:-1" aria-label="${side ? '오른쪽' : '왼쪽'} 1명 빼기">−</button>
+          <b aria-live="polite">${v}</b><span>명</span>
+          <button type="button" data-bal="${b}:${side}:1" aria-label="${side ? '오른쪽' : '왼쪽'} 1명 더하기">+</button>
+        </div>`);
       return `<section class="balance">
         <header class="scene-head"><p class="eyebrow">② 밸런스 게임 · ${b + 1} / ${BALANCE.length}</p><h2 class="scene-title">${LIVE.cfg ? '둘 중 하나, 폰으로 고르세요' : '둘 중 하나, 교실 왼쪽과 오른쪽으로'}</h2></header>
         <div class="vs${enterCls()}">
-          <div class="side left"><p class="side-k">← 왼쪽</p><p class="side-t">${q[0]}</p></div>
+          <div class="side left"><p class="side-k">← 왼쪽</p><p class="side-t">${q[0]}</p>${counter(0, a)}</div>
           <span class="vs-mark" aria-hidden="true">VS</span>
-          <div class="side right"><p class="side-k">오른쪽 →</p><p class="side-t">${q[1]}</p></div>
+          <div class="side right"><p class="side-k">오른쪽 →</p><p class="side-t">${q[1]}</p>${counter(1, c)}</div>
         </div>
-        <p class="chalk-ask">왜 그쪽을 골랐나요?</p>
       </section>`;
     },
     credit() {
@@ -1095,9 +1109,8 @@ ol, ul { padding: 0; list-style: none; }
     reflect() {
       if (state.beat === 1) {
         return `<section class="reflect">
-          <header class="scene-head"><p class="eyebrow">⑤ 다시 묻기 · 점수 없음</p><h2 class="scene-title">처음 질문에 다시 답해 봅시다</h2></header>
+          <header class="scene-head"><p class="eyebrow">⑤ 다시 묻기 · 점수 없음</p><h2 class="scene-title">마지막 질문</h2></header>
           <p class="again-q${enterCls()}">${CORE_Q}</p>
-          <p class="chalk-ask sm">처음 생각과 무엇이 달라졌나요? 한두 명이 말해 봅시다.</p>
         </section>`;
       }
       const lt = liveTally(), yes = state.tally[0] + lt[0], no = state.tally[1] + lt[1];
@@ -1118,12 +1131,9 @@ ol, ul { padding: 0; list-style: none; }
     finale() {
       if (state.beat === 1) {
         return `<section class="finale">
-          <header class="scene-head"><p class="eyebrow">다음 화 예고</p><h2 class="scene-title">우리는 왜 ‘좋은 대학’에 가려 할까?</h2></header>
-          <div class="teaser-grid">
-            ${videoSlot('teaser', '예고 영상')}
-            <ol class="storyboard" aria-label="예고 영상 장면">${STORY.map((s) => `<li class="sb"><span class="sb-k">${s.k}</span><span>${s.t}</span></li>`).join('')}</ol>
-          </div>
-          <p class="next-line">다음 시간 · 교과서 131쪽, 학력·학벌주의 <button type="button" class="btn-chalk sm" data-open-sources>자료 출처</button></p>
+          <header class="scene-head"><p class="eyebrow">다음 시간</p><h2 class="scene-title">우리는 왜 ‘좋은 대학’에 가려 할까?</h2></header>
+          <p class="again-q${enterCls()}">교과서 131쪽 · 학력·학벌주의로 경쟁의 ‘까닭’을 살펴봅니다.</p>
+          <p class="next-line"><button type="button" class="btn-chalk sm" data-open-sources>자료 출처</button></p>
         </section>`;
       }
       const S = scores();
@@ -1163,7 +1173,7 @@ ol, ul { padding: 0; list-style: none; }
       case 'bet': return b === 0 ? '뉴스 카드 공개' : b < CARDS.length ? '다음 카드' : b === CARDS.length ? '베팅 결과' : '정책과 반박';
       case 'board': return b < BOARD_STEPS.length - 1 ? BOARD_STEPS[b + 1].k : '다시 묻기';
       case 'reflect': return ['다시 답하기', '최종 점수'][b];
-      case 'finale': return b === 0 ? '다음 화 예고' : '끝';
+      case 'finale': return b === 0 ? '다음 시간' : '끝';
       default: return '다음';
     }
   }
@@ -1172,15 +1182,15 @@ ol, ul { padding: 0; list-style: none; }
     const id = sceneId(), b = state.beat;
     switch (id) {
       case 'quiz': return b % 2 === 0 ? '모둠 자석을 누른 다음, 그 모둠이 든 번호의 구멍을 누르세요. 타이머 0:30.' : `맞힌 모둠은 ${PT.quiz}점. 기록을 함께 읽으세요.`;
-      case 'balance': return b < BALANCE.length ? '둘 중 하나를 고르게 하고, 한두 명에게 이유를 물으세요. 인원은 세지 않습니다.' : '이 문장으로 고교학점제 영상과 잇습니다.';
+      case 'balance': return b < BALANCE.length ? '양쪽 인원을 + 로 세어도 되고, 건너뛰어도 됩니다.' : '이 문장으로 고교학점제 영상과 잇습니다.';
       case 'credit': return '영상 파일을 열어 트세요. 끝나면 오른쪽의 바뀐 규칙 세 가지를 짚고 베팅으로 넘어갑니다.';
       case 'bet':
         if (b === 0) return '모둠 자석을 누른 다음 구멍을 누르세요. 판 밖은 ‘안 나온다’입니다. 타이머 1:30.';
         if (b <= CARDS.length) return CARDS[b - 1].ask ? '카드의 질문을 30초 동안 따지게 하세요.' : `카드를 읽고 다음 카드로. 두더지가 나온 구멍에 건 모둠은 ${PT.bet}점.`;
         return '‘?’와 ‘안 나온다’에 건 모둠은 근거가 좋으면 점수판에서 +1.';
       case 'board': return ['모둠 대표가 자기 칸에 정책을 적습니다. 모둠이 말한 것을 보조 교사가 받아 적어도 됩니다. 타이머 2:00.', '각 칸의 반박은 다음 번호 모둠이 적습니다. 타이머 2:00.', '‘크게’를 눌러 한 모둠씩 띄우고, 답을 들은 뒤 투표하세요. 타이머 3:00.'][b];
-      case 'reflect': return ['손을 들게 해 양쪽 인원을 세어도 되고, 건너뛰어도 됩니다. 한두 명에게 이유를 물으세요.', '처음 질문을 다시 묻고, 한두 명이 처음 생각과 달라진 점을 말하게 하세요.'][b];
-      case 'finale': return b === 0 ? '우승 모둠을 발표하세요.' : '예고 영상을 틀고 인사로 마칩니다.';
+      case 'reflect': return ['손을 들게 해 양쪽 인원을 세어도 되고, 건너뛰어도 됩니다. 한두 명에게 이유를 물으세요.', '마지막 질문을 던지고, 한두 명에게 답을 들으세요.'][b];
+      case 'finale': return b === 0 ? '우승 모둠을 발표하세요.' : '다음 시간 주제를 알리고 인사로 마칩니다.';
       default: return '';
     }
   }
@@ -1356,6 +1366,12 @@ ol, ul { padding: 0; list-style: none; }
     else if (d.token) selectToken(d.token);
     else if (d.hole != null) placeToken(Number(d.hole));
     else if (d.reveal) next();
+    else if (d.bal) {
+      const [q, side, delta] = d.bal.split(':').map(Number);
+      const arr = state.balance[q];
+      arr[side] = Math.max(0, Math.min(99, arr[side] + delta));
+      lastNav = 'none'; render();
+    }
     else if (d.vote) {
       const [kind, g] = d.vote.split(':');
       state.votes[kind] = state.votes[kind] === g ? null : g;
@@ -1531,6 +1547,7 @@ ol, ul { padding: 0; list-style: none; }
     if (s.max && int(s.max.scene, 0, SCENES.length - 1) && int(s.max.beat, 0, 99)) out.max = { scene: s.max.scene, beat: Math.min(s.max.beat, SCENES[s.max.scene].max) };
     const map = (o, ok) => { const r = {}; if (o && typeof o === 'object') Object.entries(o).forEach(([g, v]) => { if (isG(g) && ok(v)) r[g] = v; }); return r; };
     if (Array.isArray(s.quiz)) out.quiz = [0, 1].map((i) => map(s.quiz[i], (v) => int(v, 0, 2)));
+    if (Array.isArray(s.balance)) out.balance = [0, 1, 2].map((i) => [0, 1].map((j) => { const v = s.balance[i] && s.balance[i][j]; return int(v, 0, 99) ? v : 0; }));
     out.bets = map(s.bets, (v) => int(v, 0, OUT));
     if (Array.isArray(s.tally)) out.tally = [0, 1].map((i) => (int(s.tally[i], 0, 99) ? s.tally[i] : 0));
     out.bonus = map(s.bonus, (v) => int(v, -9, 30));
@@ -1782,6 +1799,11 @@ ol, ul { padding: 0; list-style: none; }
     ent(LIVE.data && LIVE.data.presence).forEach(([, g]) => { const k = String(g); if (isGid(k)) { per[k] = (per[k] || 0) + 1; n += 1; } });
     return { n, per };
   }
+  function liveBal(i) {
+    const c = [0, 0];
+    ent(atk(LIVE.data && LIVE.data.bal, i)).forEach(([, v]) => { if (v === 0 || v === 1) c[v] += 1; });
+    return c;
+  }
   function liveTally() {
     const c = [0, 0];
     ent(LIVE.data && LIVE.data.tally).forEach(([, v]) => { if (v === 0 || v === 1) c[v] += 1; });
@@ -1828,7 +1850,7 @@ ol, ul { padding: 0; list-style: none; }
     if (id === 'board') { const St = BOARD_STEPS[b]; return { k: 'board', step: b, ex: St.ex, hint: St.hint || '', limits: LIMITS }; }
     if (id === 'reflect') {
       return b === 0 ? { k: 'tally', q: REFLECT_Q, opts: ['사라진다', '그래도 남는다'] }
-        : { k: 'wait', title: CORE_Q, msg: '말로 답해 봅시다. 처음 생각과 무엇이 달라졌나요?' };
+        : { k: 'wait', title: CORE_Q, msg: '선생님 질문에 말로 답해 봅시다.' };
     }
     if (id === 'finale') {
       const Sc = scores(), totals = {};
@@ -2061,11 +2083,11 @@ ol, ul { padding: 0; list-style: none; }
     const id = sceneId(), b = state.beat;
     switch (id) {
       case 'quiz': return b % 2 === 0 ? '모둠 폰으로 구멍을 고르면 자석이 바로 붙습니다. 폰이 없는 모둠은 자석을 직접 붙이세요. 타이머 0:30.' : `정답을 공개하면 폰 입력이 잠깁니다. 맞힌 모둠은 ${PT.quiz}점.`;
-      case 'balance': return b < BALANCE.length ? '폰에도 같은 질문이 뜹니다. 인원은 세지 않으니, 한두 명에게 고른 이유를 물으세요.' : null;
+      case 'balance': return b < BALANCE.length ? '학생이 폰으로 누른 인원이 양쪽에 바로 셉니다. 바꿔 누르면 마지막 선택으로 셉니다.' : null;
       case 'credit': return '폰에는 ‘화면을 보세요’가 뜹니다. 영상이 끝나면 오른쪽의 바뀐 규칙 세 가지를 짚으세요.';
       case 'bet': return b === 0 ? '모둠 폰으로 구멍을 고르면 자석이 붙습니다. 첫 카드를 공개하면 베팅이 잠깁니다. 타이머 1:30.' : null;
       case 'board': return ['모둠 폰으로 정책을 적어 올리면 칸에 바로 뜹니다. 폰이 없는 모둠은 화면 칸에 직접 적어도 됩니다. 타이머 2:00.', '각 칸의 반박은 다음 번호 모둠이 폰으로 적습니다. 타이머 2:00.', '‘크게’로 한 모둠씩 띄워 답을 들은 뒤 폰으로 투표하게 하세요. 가장 많이 받은 칸이 자동으로 뽑힙니다. 타이머 3:00.'][b];
-      case 'reflect': return ['폰으로 고른 인원이 바로 셉니다. 한두 명에게 이유를 물으세요.', '처음 질문을 다시 묻고, 한두 명이 처음 생각과 달라진 점을 말하게 하세요.'][b];
+      case 'reflect': return ['폰으로 고른 인원이 바로 셉니다. 한두 명에게 이유를 물으세요.', '마지막 질문을 던지고, 한두 명에게 답을 들으세요.'][b];
       default: return null;
     }
   }

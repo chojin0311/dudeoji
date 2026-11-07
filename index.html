@@ -304,6 +304,7 @@ h1, h2 { font-weight: 400; text-wrap: balance; }
     sub('quiz', (v) => { S.data.quiz = v; changed(); });
     sub('bets', (v) => { S.data.bets = v; changed(); });
     sub(`tally/${S.cid}`, (v) => { S.mine.tally = v; changed(); });
+    [0, 1, 2].forEach((i) => sub(`bal/${i}/${S.cid}`, (v) => { if (v === 0 || v === 1) { S.localBal[i] = v; changed(); } }));
     ['counter', 'reply'].forEach((k) => sub(`votes/${k}/${S.cid}`, (v) => { S.mine['vote-' + k] = v; changed(); }));
     clearTimeout(noRoomT);
     noRoomT = setTimeout(() => { if (!S.liveSeen) { S.status = 'noroom'; render(); } }, 8000);
@@ -518,8 +519,7 @@ h1, h2 { font-weight: 400; text-wrap: balance; }
         <span class="vs-mark" aria-hidden="true">VS</span>
         <button type="button" class="side right" data-bal="1" aria-pressed="${mine() === 1}"><span class="side-k">오른쪽${mine() === 1 ? ' · <span class="mine">내 선택</span>' : ''}</span><span class="side-t">${esc(a.b)}</span></button>
       </div>`)}
-      <p class="chalk">왜 그쪽을 골랐나요?</p>
-      <p class="help">인원은 세지 않아요. 고른 다음, 왜 그쪽인지 말할 준비를 하세요.</p>
+      <p class="help">바꿔도 됩니다. 마지막에 누른 쪽으로 선생님 화면에 셉니다.</p>
     </section>`;
   }
 
@@ -590,7 +590,7 @@ h1, h2 { font-weight: 400; text-wrap: balance; }
     const rank = order.filter((g) => totals[g] > mine).length + 1;
     const title = winners.length ? `${winners.map((g) => g + '모둠').join(', ')} ${winners.length > 1 ? '공동 우승' : '우승'}!` : '수고했어요';
     return `<section class="end">
-      <p class="eyebrow">${a.teaser ? '다음 화 예고' : '최종 점수'}</p>
+      <p class="eyebrow">${a.teaser ? '다음 시간' : '최종 점수'}</p>
       <h1 class="h1">${esc(title)}</h1>
       <div class="end-score">${token(S.g, 'lg')}<span>우리 모둠 <b>${mine}</b>점 · ${rank}등${winners.includes(S.g) ? ' · 우승' : ''}</span></div>
       <p class="msg">${a.teaser ? '다음 시간 · 우리는 왜 ‘좋은 대학’에 가려 할까?' : '게임 점수는 수업 평가에 넣지 않습니다. 수고했어요!'}</p>
@@ -636,6 +636,7 @@ h1, h2 { font-weight: 400; text-wrap: balance; }
     } else if (d.bal != null && a.k === 'bal') {
       S.localBal[Number(a.i)] = Number(d.bal);
       patch();
+      write(`bal/${Number(a.i)}/${S.cid}`, Number(d.bal)).catch(() => {});
     } else if (d.tally != null && a.k === 'tally') {
       write(`tally/${S.cid}`, Number(d.tally)).catch(() => {});
     } else if (d.vote && a.k === 'board') {
