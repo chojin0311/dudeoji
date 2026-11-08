@@ -1775,7 +1775,7 @@ ol, ul { padding: 0; list-style: none; }
   const atk = (x, k) => (x && typeof x === 'object' && x[k] != null ? x[k] : null);
   const isGid = (g) => /^[1-6]$/.test(String(g)) && Number(g) <= state.groups;
   const quizLocked = () => true; // v15: 퀴즈 장면 없음 — 폰 입력은 받지 않는다
-  const betLocked = () => betShownMax() > 0;
+  const betLocked = () => betShown() > 0; // v18: 지금 보이는 화면 기준(첫 카드를 뒤집으면 잠김)
   const votesLocked = () => reached(IDX.reflect, 0);
 
   function studentUrl() {
