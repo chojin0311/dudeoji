@@ -726,7 +726,6 @@ ol, ul { padding: 0; list-style: none; }
   /* ── 장면 ─────────────────────────────── */
   const SCENES = [
     { id: 'balance', max: 3 },
-    { id: 'credit', max: 0 },
     { id: 'bet', max: CARDS.length + 1, rail: true },
     { id: 'board', max: 2, rail: true },
     { id: 'reflect', max: 1 },
@@ -735,7 +734,6 @@ ol, ul { padding: 0; list-style: none; }
   const IDX = Object.fromEntries(SCENES.map((s, i) => [s.id, i]));
   const PHASES = [
     { label: '① 밸런스 게임', from: IDX.balance, to: IDX.balance },
-    { label: '고교학점제 영상', from: IDX.credit, to: IDX.credit },
     { label: '② 두더지 베팅', from: IDX.bet, to: IDX.bet },
     { label: '③ 정책과 반박', from: IDX.board, to: IDX.board },
     { label: '④ 다시 묻기', from: IDX.reflect, to: IDX.reflect },
@@ -743,7 +741,7 @@ ol, ul { padding: 0; list-style: none; }
   ];
 
   /* ── 상태 ─────────────────────────────── */
-  const STORE_KEY = 'dudeoji-game-v4';
+  const STORE_KEY = 'dudeoji-game-v5';
   const MAX_AGE = 4 * 60 * 60 * 1000;
   const newRoom = () => String(1000 + Math.floor(Math.random() * 9000));
   const fresh = () => ({
@@ -1162,7 +1160,7 @@ ol, ul { padding: 0; list-style: none; }
     const id = sceneId(), b = state.beat;
     switch (id) {
       case 'quiz': return ['정답 공개', '문제 2', '정답 공개', '밸런스 게임'][b];
-      case 'balance': return b < BALANCE.length - 1 ? '다음 질문' : b < BALANCE.length ? '연결' : '고교학점제 영상';
+      case 'balance': return b < BALANCE.length - 1 ? '다음 질문' : b < BALANCE.length ? '연결' : '두더지 베팅';
       case 'credit': return '두더지 베팅';
       case 'bet': return b === 0 ? '뉴스 카드 공개' : b < CARDS.length ? '다음 카드' : b === CARDS.length ? '베팅 결과' : '정책과 반박';
       case 'board': return b < BOARD_STEPS.length - 1 ? BOARD_STEPS[b + 1].k : '다시 묻기';
@@ -1176,7 +1174,7 @@ ol, ul { padding: 0; list-style: none; }
     const id = sceneId(), b = state.beat;
     switch (id) {
       case 'quiz': return b % 2 === 0 ? '모둠 자석을 누른 다음, 그 모둠이 든 번호의 구멍을 누르세요. 타이머 0:30.' : `맞힌 모둠은 ${PT.quiz}점. 기록을 함께 읽으세요.`;
-      case 'balance': return b < BALANCE.length ? '양쪽 인원을 + 로 세어도 되고, 건너뛰어도 됩니다.' : '인원을 읽어 주고 PPT 질문 1~3으로 넘어가세요. 돌아와서 다음을 누르면 고교학점제 영상입니다.';
+      case 'balance': return b < BALANCE.length ? '양쪽 인원을 + 로 세어도 되고, 건너뛰어도 됩니다.' : '인원을 읽어 주고 PPT 질문 1~3으로 넘어가세요. PPT에서 배경 질문과 고교학점제 영상을 마치고 돌아와 다음을 누르면 두더지 베팅입니다.';
       case 'credit': return '영상 파일을 열어 트세요. 끝나면 오른쪽의 바뀐 규칙 세 가지를 짚고 베팅으로 넘어갑니다.';
       case 'bet':
         if (b === 0) return '모둠 자석을 누른 다음 구멍을 누르세요. 판 밖은 ‘안 나온다’입니다. 타이머 1:30.';
